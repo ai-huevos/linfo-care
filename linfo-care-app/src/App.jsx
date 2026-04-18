@@ -12,7 +12,7 @@ const Chat = lazy(() => import('./pages/Chat'));
 const Diagnosis = lazy(() => import('./pages/medical/Diagnosis'));
 const Questions = lazy(() => import('./pages/medical/Questions'));
 const LabResults = lazy(() => import('./pages/medical/LabResults'));
-const BodyMap = lazy(() => import('./pages/medical/BodyMap'));
+const BodyMap = lazy(() => import('./pages/medical/BodyMapEnhanced'));
 const Documents = lazy(() => import('./pages/medical/Documents'));
 
 // Family
