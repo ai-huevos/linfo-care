@@ -11,6 +11,9 @@ const Chat = lazy(() => import('./pages/Chat'));
 // Medical
 const Diagnosis = lazy(() => import('./pages/medical/Diagnosis'));
 const Questions = lazy(() => import('./pages/medical/Questions'));
+const LabResults = lazy(() => import('./pages/medical/LabResults'));
+const BodyMap = lazy(() => import('./pages/medical/BodyMap'));
+const Documents = lazy(() => import('./pages/medical/Documents'));
 
 // Family
 const Journal = lazy(() => import('./pages/family/Journal'));
@@ -74,11 +77,11 @@ export default function App() {
 
               {/* Medical Record */}
               <Route path="/medical/diagnosis" element={<Diagnosis />} />
-              <Route path="/medical/bodymap" element={<ComingSoon title="Mapa Corporal" />} />
-              <Route path="/medical/labs" element={<ComingSoon title="Laboratorios" />} />
+              <Route path="/medical/bodymap" element={<BodyMap />} />
+              <Route path="/medical/labs" element={<LabResults />} />
               <Route path="/medical/treatment" element={<ComingSoon title="Plan de Tratamiento" />} />
               <Route path="/medical/medications" element={<ComingSoon title="Medicamentos" />} />
-              <Route path="/medical/documents" element={<ComingSoon title="Documentos Médicos" />} />
+              <Route path="/medical/documents" element={<Documents />} />
               <Route path="/medical/questions" element={<Questions />} />
 
               {/* Family Hub */}
