@@ -1,38 +1,29 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Save, NotebookPen } from 'lucide-react';
+import { Plus, Trash2, Save, NotebookPen, Loader2, Wifi } from 'lucide-react';
 import { SectionTitle, Card } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
+import { useSupabaseTable } from '../../lib/useSupabase';
 
 export default function Journal() {
-  const { displayName } = useAuth();
-  const [entries, setEntries] = useState(() => {
-    try {
-      const saved = localStorage.getItem('linfocare-journal');
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
+  const { user, displayName } = useAuth();
+  const { data: entries, loading, insert, remove } = useSupabaseTable('journal_entries');
   const [newNote, setNewNote] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const saveEntries = (updated) => {
-    setEntries(updated);
-    localStorage.setItem('linfocare-journal', JSON.stringify(updated));
-  };
-
-  const addEntry = () => {
+  const addEntry = async () => {
     if (!newNote.trim()) return;
-    const entry = {
-      id: Date.now(),
+    setSaving(true);
+    await insert({
       content: newNote.trim(),
-      author: displayName,
-      type: 'note',
-      created_at: new Date().toISOString(),
-    };
-    saveEntries([entry, ...entries]);
+      author_id: user?.id,
+      entry_type: 'note',
+    });
     setNewNote('');
+    setSaving(false);
   };
 
-  const deleteEntry = (id) => {
-    saveEntries(entries.filter(e => e.id !== id));
+  const deleteEntry = async (id) => {
+    await remove(id);
   };
 
   return (
@@ -40,6 +31,12 @@ export default function Journal() {
       <SectionTitle subtitle="Espacio para notas diarias de la familia: cómo amaneció, qué comió, qué le preocupó, qué dijo el médico, cualquier cosa relevante.">
         Diario de la familia
       </SectionTitle>
+
+      {/* Sync indicator */}
+      <div className="flex items-center gap-1.5 text-[10px] text-emerald-600">
+        <Wifi className="w-3 h-3" />
+        <span>Sincronizado — visible para toda la familia</span>
+      </div>
 
       {/* New entry */}
       <Card>
@@ -56,15 +53,23 @@ export default function Journal() {
         />
         <button
           onClick={addEntry}
-          disabled={!newNote.trim()}
+          disabled={!newNote.trim() || saving}
           className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Save className="w-4 h-4" /> Guardar con fecha y hora
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Guardar con fecha y hora
         </button>
       </Card>
 
       {/* Entries */}
-      {entries.length === 0 ? (
+      {loading ? (
+        <Card>
+          <div className="flex items-center justify-center py-8 gap-2 text-stone-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Cargando notas...</span>
+          </div>
+        </Card>
+      ) : entries.length === 0 ? (
         <Card tone="muted">
           <p className="text-sm text-stone-500 text-center py-6">
             Sin notas todavía. Empieza registrando cómo amaneció Roro hoy.
@@ -78,9 +83,9 @@ export default function Journal() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold">
-                      {entry.author?.charAt(0)?.toUpperCase() || 'F'}
+                      {displayName?.charAt(0)?.toUpperCase() || 'F'}
                     </div>
-                    <span className="text-xs font-medium text-stone-700">{entry.author || 'Familia'}</span>
+                    <span className="text-xs font-medium text-stone-700">{displayName || 'Familia'}</span>
                     <span className="text-[10px] text-stone-400">
                       {new Date(entry.created_at).toLocaleString('es-CO', {
                         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'

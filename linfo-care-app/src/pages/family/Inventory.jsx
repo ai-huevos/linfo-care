@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { Package, Check, ShoppingCart, AlertCircle, Search } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, Check, ShoppingCart, AlertCircle, Search, Loader2, Wifi } from 'lucide-react';
 import { SectionTitle, Card, Pill } from '../../components/ui';
 import { inventoryCatalog } from '../../data/inventory';
+import { useAuth } from '../../lib/auth';
+import { supabase } from '../../lib/supabase';
+import { getPatientId } from '../../lib/useSupabase';
 
 const statusConfig = {
   have: { label: 'Tenemos', icon: Check, color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
@@ -11,39 +14,111 @@ const statusConfig = {
 };
 
 export default function Inventory() {
-  const [data, setData] = useState(() => {
-    try {
-      const saved = localStorage.getItem('linfocare-inventory');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+  const { user } = useAuth();
+  const [data, setData] = useState({});
   const [search, setSearch] = useState('');
   const [assignInput, setAssignInput] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const save = (updated) => {
-    setData(updated);
-    localStorage.setItem('linfocare-inventory', JSON.stringify(updated));
-  };
+  // Load inventory from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pid = await getPatientId();
+      if (!pid || cancelled) { setLoading(false); return; }
 
-  const setStatus = (key, status) => {
-    save({ ...data, [key]: { ...data[key], status } });
-  };
+      const { data: rows } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('patient_id', pid);
 
-  const setAssigned = (key, assigned) => {
-    save({ ...data, [key]: { ...data[key], assigned } });
-  };
+      if (!cancelled && rows) {
+        const map = {};
+        rows.forEach(row => {
+          map[row.item_name] = { status: row.status, assigned: row.assigned_to, dbId: row.id, category: row.category };
+        });
+        setData(map);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  // Stats
+  const setStatus = useCallback(async (key, category, status) => {
+    const pid = await getPatientId();
+    const existing = data[key];
+
+    if (existing?.dbId) {
+      await supabase.from('inventory_items')
+        .update({ status, updated_by: user?.id, updated_at: new Date().toISOString() })
+        .eq('id', existing.dbId);
+      setData(prev => ({ ...prev, [key]: { ...prev[key], status } }));
+    } else {
+      const { data: created } = await supabase
+        .from('inventory_items')
+        .insert({
+          patient_id: pid,
+          category,
+          item_name: key,
+          status,
+          updated_by: user?.id,
+        })
+        .select()
+        .single();
+      setData(prev => ({ ...prev, [key]: { status, dbId: created?.id, category } }));
+    }
+  }, [data, user]);
+
+  const setAssigned = useCallback(async (key, category, assigned) => {
+    const pid = await getPatientId();
+    const existing = data[key];
+
+    if (existing?.dbId) {
+      await supabase.from('inventory_items')
+        .update({ assigned_to: assigned, updated_by: user?.id })
+        .eq('id', existing.dbId);
+      setData(prev => ({ ...prev, [key]: { ...prev[key], assigned } }));
+    } else {
+      const { data: created } = await supabase
+        .from('inventory_items')
+        .insert({
+          patient_id: pid,
+          category,
+          item_name: key,
+          status: 'pending',
+          assigned_to: assigned,
+          updated_by: user?.id,
+        })
+        .select()
+        .single();
+      setData(prev => ({ ...prev, [key]: { status: 'pending', assigned, dbId: created?.id, category } }));
+    }
+  }, [data, user]);
+
   const allItems = inventoryCatalog.flatMap(cat => cat.items);
   const total = allItems.length;
   const have = allItems.filter(item => data[item]?.status === 'have').length;
   const missing = allItems.filter(item => data[item]?.status === 'missing').length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 gap-2 text-stone-400">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Cargando inventario...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
       <SectionTitle subtitle="Todo lo que necesitamos tener listo para el cuidado de Roro. Marquen lo que ya tienen, lo que falta, y quién se encarga.">
         Inventario de insumos
       </SectionTitle>
+
+      <div className="flex items-center gap-1.5 text-[10px] text-emerald-600">
+        <Wifi className="w-3 h-3" />
+        <span>Sincronizado — todos pueden actualizar el inventario</span>
+      </div>
 
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-3">
@@ -98,12 +173,11 @@ export default function Inventory() {
 
                 return (
                   <div key={item} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-stone-50 transition-colors group">
-                    {/* Status button */}
                     <button
                       onClick={() => {
                         const cycle = ['pending', 'have', 'buying', 'missing'];
                         const next = cycle[(cycle.indexOf(status) + 1) % cycle.length];
-                        setStatus(key, next);
+                        setStatus(key, cat.category, next);
                       }}
                       className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border transition-colors ${cfg.color}`}
                       title="Clic para cambiar estado"
@@ -111,17 +185,13 @@ export default function Inventory() {
                       <StatusIcon className="w-3 h-3" />
                       {cfg.label}
                     </button>
-
-                    {/* Item name */}
                     <span className="text-sm text-stone-800 flex-1">{item}</span>
-
-                    {/* Assigned */}
                     <input
                       type="text"
                       placeholder="¿Quién?"
                       value={assignInput[key] ?? itemData.assigned ?? ''}
                       onChange={e => setAssignInput({ ...assignInput, [key]: e.target.value })}
-                      onBlur={e => { setAssigned(key, e.target.value); setAssignInput({ ...assignInput, [key]: undefined }); }}
+                      onBlur={e => { setAssigned(key, cat.category, e.target.value); setAssignInput({ ...assignInput, [key]: undefined }); }}
                       className="w-24 text-xs px-2 py-1 border border-stone-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-sky-200 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                     />
                   </div>

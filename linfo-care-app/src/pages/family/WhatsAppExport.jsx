@@ -1,33 +1,53 @@
-import React, { useState, useMemo } from 'react';
-import { Copy, Check, MessageCircle, Share2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Copy, Check, MessageCircle, Share2, Loader2 } from 'lucide-react';
 import { SectionTitle, Card } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
+import { supabase } from '../../lib/supabase';
+import { getPatientId } from '../../lib/useSupabase';
+import { checklistItems } from '../../data/checklist';
 
 export default function WhatsAppExport() {
   const { displayName } = useAuth();
   const [copied, setCopied] = useState(false);
   const [customNote, setCustomNote] = useState('');
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [checklistDone, setChecklistDone] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
   const dateStr = today.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Pull data from localStorage to build the summary
-  const journalEntries = useMemo(() => {
-    try {
-      const saved = localStorage.getItem('linfocare-journal');
-      const entries = saved ? JSON.parse(saved) : [];
-      const todayStr = today.toISOString().slice(0, 10);
-      return entries.filter(e => e.created_at?.startsWith(todayStr));
-    } catch { return []; }
-  }, []);
+  // Pull data from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pid = await getPatientId();
+      if (!pid || cancelled) { setLoading(false); return; }
 
-  const checklistData = useMemo(() => {
-    try {
-      const saved = localStorage.getItem('linfocare-checklist');
-      const data = saved ? JSON.parse(saved) : {};
-      const todayStr = today.toISOString().slice(0, 10);
-      return Object.keys(data).filter(k => k.startsWith(todayStr)).length;
-    } catch { return 0; }
+      // Get today's journal entries
+      const { data: journal } = await supabase
+        .from('journal_entries')
+        .select('*, profiles:author_id(display_name)')
+        .eq('patient_id', pid)
+        .gte('created_at', `${todayStr}T00:00:00`)
+        .lte('created_at', `${todayStr}T23:59:59`)
+        .order('created_at', { ascending: true });
+
+      // Get today's checklist items
+      const { data: checks } = await supabase
+        .from('daily_checklist')
+        .select('*')
+        .eq('patient_id', pid)
+        .eq('check_date', todayStr);
+
+      if (!cancelled) {
+        setJournalEntries(journal || []);
+        setChecklistDone(checks?.length || 0);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const exportText = useMemo(() => {
@@ -39,13 +59,14 @@ export default function WhatsAppExport() {
     if (journalEntries.length > 0) {
       text += `📝 *Notas del día:*\n`;
       journalEntries.forEach(e => {
-        text += `• [${e.author || 'Familia'}] ${e.content}\n`;
+        const authorName = e.profiles?.display_name || 'Familia';
+        text += `• [${authorName}] ${e.content}\n`;
       });
       text += `\n`;
     }
 
-    if (checklistData > 0) {
-      text += `✅ *Checklist:* ${checklistData}/18 items completados hoy\n\n`;
+    if (checklistDone > 0) {
+      text += `✅ *Checklist:* ${checklistDone}/${checklistItems.length} items completados hoy\n\n`;
     }
 
     if (customNote.trim()) {
@@ -56,7 +77,7 @@ export default function WhatsAppExport() {
     text += `_Enviado desde LinfoCare por ${displayName}_`;
 
     return text;
-  }, [journalEntries, checklistData, customNote, displayName, dateStr]);
+  }, [journalEntries, checklistDone, customNote, displayName, dateStr]);
 
   const handleCopy = async () => {
     try {
@@ -64,7 +85,6 @@ export default function WhatsAppExport() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for mobile
       const ta = document.createElement('textarea');
       ta.value = exportText;
       document.body.appendChild(ta);
@@ -83,6 +103,15 @@ export default function WhatsAppExport() {
       window.open(`https://wa.me/?text=${encodeURIComponent(exportText)}`, '_blank');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 gap-2 text-stone-400">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Preparando resumen...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">

@@ -1,43 +1,85 @@
-import React, { useState, useMemo } from 'react';
-import { CheckCircle2, Circle, Shield, Droplets, Brain, Thermometer, HandHeart } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { CheckCircle2, Circle, Shield, Droplets, Brain, Thermometer, HandHeart, Loader2, Wifi } from 'lucide-react';
 import { SectionTitle, Card, Pill } from '../../components/ui';
 import { checklistItems, checklistCategories } from '../../data/checklist';
 import { useAuth } from '../../lib/auth';
+import { supabase } from '../../lib/supabase';
+import { getPatientId } from '../../lib/useSupabase';
 
 const iconMap = {
   Shield, Droplets, Brain, Thermometer, HandHeart,
-  Soup: Thermometer, // fallback
+  Soup: Thermometer,
 };
 
 export default function DailyChecklist() {
-  const { displayName } = useAuth();
+  const { user, displayName } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
+  const [completed, setCompleted] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const [completed, setCompleted] = useState(() => {
-    try {
-      const saved = localStorage.getItem('linfocare-checklist');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+  // Fetch today's checklist items from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pid = await getPatientId();
+      if (!pid || cancelled) { setLoading(false); return; }
 
-  const toggleItem = (itemId) => {
+      const { data } = await supabase
+        .from('daily_checklist')
+        .select('*')
+        .eq('patient_id', pid)
+        .eq('check_date', today);
+
+      if (!cancelled && data) {
+        const map = {};
+        data.forEach(row => {
+          map[`${today}:${row.item_id}`] = { by: displayName, at: row.created_at, dbId: row.id };
+        });
+        setCompleted(map);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [today]);
+
+  const toggleItem = useCallback(async (itemId) => {
     const key = `${today}:${itemId}`;
-    const updated = {
-      ...completed,
-      [key]: completed[key]
-        ? undefined
-        : { by: displayName, at: new Date().toISOString() },
-    };
-    // Clean up undefined keys
-    Object.keys(updated).forEach(k => { if (!updated[k]) delete updated[k]; });
-    setCompleted(updated);
-    localStorage.setItem('linfocare-checklist', JSON.stringify(updated));
-  };
+    const pid = await getPatientId();
+
+    if (completed[key]) {
+      // Uncheck — delete from DB
+      if (completed[key].dbId) {
+        await supabase.from('daily_checklist').delete().eq('id', completed[key].dbId);
+      }
+      setCompleted(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } else {
+      // Check — insert into DB
+      const { data } = await supabase
+        .from('daily_checklist')
+        .insert({
+          patient_id: pid,
+          completed_by: user?.id,
+          item_id: itemId,
+          check_date: today,
+          completed: true,
+        })
+        .select()
+        .single();
+
+      setCompleted(prev => ({
+        ...prev,
+        [key]: { by: displayName, at: new Date().toISOString(), dbId: data?.id },
+      }));
+    }
+  }, [completed, today, user, displayName]);
 
   const isChecked = (itemId) => Boolean(completed[`${today}:${itemId}`]);
   const getChecker = (itemId) => completed[`${today}:${itemId}`];
 
-  // Group by category
   const grouped = useMemo(() => {
     const map = {};
     checklistItems.forEach(item => {
@@ -49,11 +91,25 @@ export default function DailyChecklist() {
 
   const totalDone = checklistItems.filter(i => isChecked(i.id)).length;
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 gap-2 text-stone-400">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Cargando checklist...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-3xl">
       <SectionTitle subtitle={`Checklist diario para ${today}. Cada turno marca lo que hizo. Se reinicia cada día.`}>
         Checklist diario
       </SectionTitle>
+
+      <div className="flex items-center gap-1.5 text-[10px] text-emerald-600">
+        <Wifi className="w-3 h-3" />
+        <span>Sincronizado — todos ven los mismos checks</span>
+      </div>
 
       {/* Progress */}
       <Card>

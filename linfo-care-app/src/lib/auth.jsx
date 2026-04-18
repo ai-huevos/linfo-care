@@ -47,12 +47,30 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    setProfile(data);
+
+    if (data) {
+      setProfile(data);
+    } else if (error?.code === 'PGRST116') {
+      // Profile doesn't exist yet (trigger may have failed) — create it
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      const newProfile = {
+        id: userId,
+        email: currentUser?.email,
+        display_name: currentUser?.user_metadata?.display_name || currentUser?.email?.split('@')[0] || 'Familia',
+        role: 'member',
+      };
+      const { data: created } = await supabase
+        .from('profiles')
+        .insert(newProfile)
+        .select()
+        .single();
+      setProfile(created || newProfile);
+    }
   }
 
   async function signInWithMagicLink(email) {
