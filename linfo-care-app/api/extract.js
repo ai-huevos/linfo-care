@@ -1,4 +1,5 @@
 import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 
 const EXTRACTION_PROMPT = `You are a medical document extraction AI. You analyze images of medical documents in Spanish (prescriptions, lab results, authorizations, clinical notes) and extract structured data.
 
@@ -58,9 +59,9 @@ export default async function handler(req) {
       });
     }
 
-    // Use GPT-4o for vision (better than mini for document extraction)
+    // Uses explicit openai() provider — auto-routes through Vercel AI Gateway
     const result = await generateText({
-      model: 'openai/gpt-4o',
+      model: openai('gpt-4o'),
       messages: [
         {
           role: 'user',

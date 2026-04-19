@@ -1,4 +1,5 @@
 import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 
 const SYSTEM_PROMPT = `You are "Doctora Lío", a medical document translator, clinical summarizer, and family-care navigator for a Spanish-speaking family caring for an older adult (Rodrigo "Roro" Cardona, 78 years old) with diffuse large B-cell lymphoma (DLBCL).
 
@@ -41,12 +42,10 @@ export default async function handler(req) {
   try {
     const { messages } = await req.json();
 
-    // Model is routed through Vercel AI Gateway. On Vercel runtime the
-    // OIDC token is auto-injected (VERCEL_OIDC_TOKEN); locally `vercel env pull`
-    // writes a short-lived token to .env.local at the project root. No manual
-    // OpenAI API key required.
+    // Uses the @ai-sdk/openai provider which auto-routes through
+    // the Vercel AI Gateway when deployed (OIDC auth, no API key needed).
     const result = streamText({
-      model: 'openai/gpt-4o-mini',
+      model: openai('gpt-4o-mini'),
       system: SYSTEM_PROMPT,
       messages,
       maxTokens: 1500,
