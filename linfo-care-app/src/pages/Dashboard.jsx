@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Activity, Calendar, FileText, NotebookPen, AlertCircle,
   TrendingUp, Clock, Users, Stethoscope, Bot, ChevronRight,
-  Heart, Shield, FlaskConical, ArrowRight
+  Heart, Shield, FlaskConical, ArrowRight, Thermometer
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, Pill } from '../components/ui';
@@ -11,11 +11,11 @@ import { useAuth } from '../lib/auth';
 const treatmentPhases = [
   { name: 'Ingreso UCI', status: 'completed', date: 'Abr 6' },
   { name: 'Diagnóstico', status: 'completed', date: 'Abr 7-13' },
-  { name: 'Oncología', status: 'active', date: 'Abr 14+' },
-  { name: 'Pre-fase', status: 'upcoming', date: 'Pendiente' },
-  { name: 'Ciclo 1', status: 'upcoming', date: 'Pendiente' },
+  { name: 'Oncología', status: 'completed', date: 'Abr 14-17' },
+  { name: 'UCI Hemato', status: 'active', date: 'Abr 18+' },
+  { name: 'Protocolo', status: 'upcoming', date: 'Pendiente' },
+  { name: 'Quimio C1', status: 'upcoming', date: 'Por definir' },
   { name: 'Nadir', status: 'upcoming', date: 'Día 7-14' },
-  { name: 'Ciclo 2', status: 'upcoming', date: 'Día 21' },
   { name: 'PET', status: 'upcoming', date: 'Post C2-4' },
 ];
 
@@ -151,6 +151,35 @@ export default function Dashboard() {
           gradient="from-green-500 to-emerald-600"
         />
       </div>
+
+      {/* UCI Status */}
+      <Card className="!bg-gradient-to-br !from-amber-50/60 !to-orange-50/40 !border-amber-200">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-none">
+            <Shield className="w-5 h-5 text-amber-700" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-amber-900 mb-1">UCI Hemato-Oncología — Abril 18</h3>
+            <p className="text-sm text-amber-800 leading-relaxed">
+              Roro fue admitido a la UCI de hemato-oncología. 4 medicamentos autorizados: 
+              <strong> Vincristina, Ondansetrón, Piperacilina, Rosuvastatina</strong>. 
+              Protocolo de quimioterapia pendiente de confirmación.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Infection watch */}
+      <Card tone="warn" className="!border-amber-300">
+        <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+          <Thermometer className="w-4 h-4" />
+          🔬 Vigilancia de infección activa
+        </h3>
+        <p className="text-sm text-amber-800 leading-relaxed">
+          Roro está recibiendo <strong>Piperacilina (antibiótico IV)</strong> — hay riesgo o sospecha de infección. 
+          Vigilar: fiebre, escalofríos, cambios en frecuencia cardíaca, tos nueva, cambio en drenaje del tubo de tórax.
+        </p>
+      </Card>
 
       {/* Emergency Alerts */}
       <Card tone="critical" className="!border-rose-300">

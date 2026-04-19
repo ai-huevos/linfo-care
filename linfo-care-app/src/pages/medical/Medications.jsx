@@ -5,17 +5,13 @@ import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import { getPatientId } from '../../lib/useSupabase';
 
-// Pre-loaded medications for Roro based on clinical data
+// Confirmed medications — only drugs authorized by Clínica del Country
+// Doses will be updated once authorization JPG images are processed
 const defaultMeds = [
-  { name: 'Prednisona', dose: '100 mg/día', frequency: '1 vez al día con desayuno', category: 'quimio', status: 'active', notes: 'Pre-fase y días 1-5 de cada ciclo. Puede elevar glucosa. Da apetito y energía.', sideEffects: 'Insomnio, hambre excesiva, hiperglucemia, irritabilidad' },
-  { name: 'Alopurinol', dose: '300 mg/día', frequency: '1 vez al día', category: 'soporte', status: 'active', notes: 'Protege riñones del síndrome de lisis tumoral. Tomar con abundante agua.', sideEffects: 'Rash (suspender si aparece), náusea leve' },
-  { name: 'Omeprazol', dose: '20 mg/día', frequency: 'En ayunas, 30 min antes del desayuno', category: 'soporte', status: 'active', notes: 'Protege estómago de la prednisona y el estrés.', sideEffects: 'Generalmente bien tolerado' },
-  { name: 'Ondansetrón', dose: '8 mg c/8h PRN', frequency: 'Solo si náusea', category: 'soporte', status: 'active', notes: 'Anti-náusea para los días de quimio. Puede causar estreñimiento — combinar con movicol.', sideEffects: 'Estreñimiento, dolor de cabeza leve' },
-  { name: 'Acetaminofén', dose: '500 mg c/6h PRN', frequency: 'Solo si dolor o fiebre', category: 'soporte', status: 'active', notes: 'Para dolor y fiebre. NO usar ibuprofeno (afecta plaquetas). Máximo 2g/día por hígado.', sideEffects: 'Daño hepático si se excede la dosis' },
-  { name: 'Rituximab', dose: '375 mg/m²', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Anticuerpo monoclonal. Pre-medicar con acetaminofén + difenhidramina. Primera infusión lenta (4-6h).', sideEffects: 'Reacción infusional: fiebre, escalofríos, rash. Reducir velocidad si aparecen.' },
-  { name: 'Ciclofosfamida', dose: '750 mg/m² (o 400 mini)', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Quimioterapia. Hidratación obligatoria. Puede causar cistitis hemorrágica — mucha agua.', sideEffects: 'Náusea, caída de pelo, cistitis' },
-  { name: 'Doxorrubicina', dose: '50 mg/m² (o 25 mini)', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Antibiótico antitumoral. Color ROJO — orina puede ser rosa 24-48h (normal). Riesgo cardíaco acumulativo.', sideEffects: 'Cardiotoxicidad, náusea, alopecia, mucositis' },
-  { name: 'Vincristina', dose: '1.4 mg/m² (max 2mg)', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Antitumoral. Vigilar hormigueo en manos/pies (neuropatía periférica). Avisar si el estreñimiento es severo.', sideEffects: 'Neuropatía, estreñimiento severo, dolor mandibular' },
+  { name: 'Vincristina', dose: 'Por confirmar (solución inyectable)', frequency: 'Según indicación médica', category: 'quimio', status: 'active', notes: 'Agente antineoplásico autorizado. Impide la división celular tumoral. Es la "O" (Oncovin) del esquema R-CHOP — su autorización puede indicar que el equipo se mueve hacia ese protocolo.', sideEffects: 'Neuropatía periférica (hormigueo manos/pies), estreñimiento severo, dolor mandibular. Avisar si aparece cualquiera.' },
+  { name: 'Ondansetrón', dose: 'Por confirmar', frequency: 'Según indicación médica', category: 'soporte', status: 'active', notes: 'Anti-emético (previene náusea y vómito). Se usa para contrarrestar los efectos gastrointestinales de la quimioterapia y otros medicamentos.', sideEffects: 'Estreñimiento, dolor de cabeza leve. Asegurar hidratación.' },
+  { name: 'Piperacilina', dose: 'Por confirmar (IV)', frequency: 'Según indicación médica', category: 'soporte', status: 'active', notes: 'Antibiótico de amplio espectro IV (probablemente Piperacilina/Tazobactam). Cobertura antibiótica para riesgo de infección en contexto de UCI e inmunosupresión por la enfermedad.', sideEffects: 'Diarrea, reacción alérgica (rash, fiebre). Avisar si aparece rash o dificultad respiratoria.' },
+  { name: 'Rosuvastatina', dose: 'Por confirmar', frequency: 'Según indicación médica', category: 'otro', status: 'active', notes: 'Estatina para control de lípidos y efecto antiinflamatorio. Medicamento que Roro probablemente tomaba antes del ingreso y se mantiene durante la hospitalización.', sideEffects: 'Dolor muscular (mialgia), elevación de enzimas hepáticas. Generalmente bien tolerado.' },
 ];
 
 const categoryConfig = {
