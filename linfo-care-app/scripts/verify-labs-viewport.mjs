@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ headless: true });
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 2 });
+const page = await ctx.newPage();
+const errs = []; page.on('console', m => m.type()==='error' && errs.push(m.text()));
+await page.goto('http://localhost:5180/medical/labs', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: '/tmp/linfo-shots/labs-viewport.png' });
+const totalCircles = await page.evaluate(() => document.querySelectorAll('svg circle').length);
+console.log(JSON.stringify({ errs, totalCircles }, null, 2));
+await browser.close();

@@ -82,6 +82,10 @@ async function main() {
     if (row.value === null || row.value === undefined || !Number.isFinite(Number(row.value))) return;
     if (!row.result_date) return;
     if (!row.lab_name) return;
+    // Drop urinálisis/dip-stick qualitative rows that parsed as value=0 with
+    // no unit and no range. These are "negativo/ausente/presente" results
+    // misread as numeric 0 and they're noise in the lab trend view.
+    if (Number(row.value) === 0 && !row.unit && row.normal_min == null && row.normal_max == null) return;
 
     const key = `${normalizeKey(row.lab_name)}|${row.result_date}`;
     const existing = byKey.get(key);
