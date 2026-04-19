@@ -23,6 +23,7 @@ const Inventory = lazy(() => import('./pages/family/Inventory'));
 const DailyChecklist = lazy(() => import('./pages/family/DailyChecklist'));
 const WhatsAppExport = lazy(() => import('./pages/family/WhatsAppExport'));
 const CareShifts = lazy(() => import('./pages/family/CareShifts'));
+const GiftRequests = lazy(() => import('./pages/family/GiftRequests'));
 
 // Care
 const Nutrition = lazy(() => import('./pages/care/Nutrition'));
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="/family/shifts" element={<CareShifts />} />
               <Route path="/family/journal" element={<Journal />} />
               <Route path="/family/inventory" element={<Inventory />} />
+              <Route path="/family/gifts" element={<GiftRequests />} />
               <Route path="/family/checklist" element={<DailyChecklist />} />
               <Route path="/family/export" element={<WhatsAppExport />} />
 

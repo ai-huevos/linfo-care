@@ -28,6 +28,7 @@ export default function CareShifts() {
   const [shifts, setShifts] = useState({});
   const [loading, setLoading] = useState(true);
   const [guestName, setGuestName] = useState(() => localStorage.getItem('linfocare_guest_name') || '');
+  const [guestPhone, setGuestPhone] = useState(() => localStorage.getItem('linfocare_guest_phone') || '');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
 
   const baseDate = new Date();
@@ -80,9 +81,11 @@ export default function CareShifts() {
     toggleShift(dateStr, slotId);
   };
 
-  const saveGuestName = (name) => {
+  const saveGuestInfo = (name, phone) => {
     setGuestName(name);
+    setGuestPhone(phone);
     localStorage.setItem('linfocare_guest_name', name);
+    localStorage.setItem('linfocare_guest_phone', phone);
     setShowNamePrompt(false);
   };
 
@@ -261,40 +264,58 @@ export default function CareShifts() {
             </p>
           </Card>
 
-          {/* Guest name prompt modal */}
+          {/* Guest name + phone prompt modal */}
           {showNamePrompt && (
             <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowNamePrompt(false)}>
               <Card className="!max-w-sm w-full animate-slide-up" onClick={e => e.stopPropagation()}>
                 <h3 className="text-lg font-semibold text-stone-900 mb-2">¿Cómo te llamas?</h3>
                 <p className="text-sm text-stone-500 mb-4">Tu nombre aparecerá en el turno para que la familia sepa quién va.</p>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Ej: Tía Martha"
-                  className="w-full px-4 py-3 text-sm border border-stone-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && e.target.value.trim()) {
-                      saveGuestName(e.target.value.trim());
-                    }
-                  }}
-                />
-                <p className="text-[11px] text-stone-400 mt-2">Presiona Enter para continuar</p>
+                <form onSubmit={e => {
+                  e.preventDefault();
+                  const fd = new FormData(e.target);
+                  const n = fd.get('name')?.trim();
+                  if (n) saveGuestInfo(n, fd.get('phone')?.trim() || '');
+                }} className="space-y-3">
+                  <input
+                    name="name"
+                    type="text"
+                    autoFocus
+                    defaultValue={guestName}
+                    placeholder="Ej: Tía Martha"
+                    required
+                    className="w-full px-4 py-3 text-sm border border-stone-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  />
+                  <input
+                    name="phone"
+                    type="tel"
+                    defaultValue={guestPhone}
+                    placeholder="Celular (opcional) — para coordinar"
+                    className="w-full px-4 py-3 text-sm border border-stone-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-3 rounded-xl hover:from-sky-700 hover:to-indigo-700 shadow-md transition-all"
+                  >
+                    Continuar
+                  </button>
+                </form>
               </Card>
             </div>
           )}
 
-          {/* Show current guest name with option to change */}
+          {/* Show current guest info with option to change */}
           {isGuest && guestName && (
             <Card className="!py-3 !px-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-stone-600">
+                <div className="text-sm text-stone-600">
                   Anotándote como: <strong className="text-stone-900">{guestName}</strong>
-                </p>
+                  {guestPhone && <span className="text-stone-400 ml-2">📱 {guestPhone}</span>}
+                </div>
                 <button
                   onClick={() => setShowNamePrompt(true)}
                   className="text-xs text-sky-600 hover:text-sky-700 font-medium"
                 >
-                  Cambiar nombre
+                  Cambiar
                 </button>
               </div>
             </Card>

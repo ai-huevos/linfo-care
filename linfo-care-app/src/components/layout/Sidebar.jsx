@@ -5,7 +5,7 @@ import {
   Activity, MapPin, FlaskConical, Pill, FileText, HelpCircle,
   Calendar, NotebookPen, Package, CheckSquare, MessageCircle,
   ChevronDown, ChevronRight, X, Menu, LogOut, Bot,
-  Shield, BookOpenCheck, KeyRound
+  Shield, BookOpenCheck, KeyRound, Gift
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
@@ -38,6 +38,7 @@ const navSections = [
       { label: 'Turnos', icon: Calendar, path: '/family/shifts' },
       { label: 'Diario', icon: NotebookPen, path: '/family/journal' },
       { label: 'Inventario', icon: Package, path: '/family/inventory' },
+      { label: 'Regalos', icon: Gift, path: '/family/gifts' },
       { label: 'Checklist diario', icon: CheckSquare, path: '/family/checklist' },
       { label: 'WhatsApp', icon: MessageCircle, path: '/family/export' },
     ],
