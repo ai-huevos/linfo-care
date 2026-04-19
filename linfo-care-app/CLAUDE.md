@@ -36,7 +36,7 @@ No test runner is configured. No formatter beyond ESLint. The project is JavaScr
 - **Language:** All user-facing copy is Spanish (es). The patient is "Roro". Do not translate to English.
 - **File type:** `.jsx` with default-exported functional components. Top imports usually go: React/hooks → `lucide-react` icons → `'../../components/ui'` → `auth`/`supabase` when needed.
 - **Styling:** Tailwind utility classes. Palette uses stone (neutral), sky (primary), rose (critical), amber (alert), emerald (safe). No dark mode is configured. Fonts: Playfair Display (serif headings) + Inter (body), loaded in `src/index.css`.
-- **Deployment:** Netlify. `netlify.toml` rewrites `/api/*` → `/.netlify/functions/:splat` (200) and falls back to `/index.html` for SPA routing. `dist/` is the publish dir.
+- **Deployment:** Vercel. `vercel.json` configures the build command and output directory. SPA routing handled by Vercel's default rewrites. `dist/` is the publish dir. An `api/chat` serverless function (Vercel Edge) replaces the former Netlify function.
 - **Environment:** `.env.local` holds `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `OPENAI_API_KEY`. `.env.example` documents the shape.
 
 ## What *not* to do

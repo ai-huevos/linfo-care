@@ -74,13 +74,13 @@ function NavSection({ section, collapsed, onNavigate }) {
       <NavLink
         to={section.path}
         onClick={onNavigate}
-        className={`flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+        className={`flex items-center gap-2.5 px-3 py-3 text-sm rounded-lg transition-all duration-200 ${
           isActive
             ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-600/20'
             : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
         }`}
       >
-        <Icon className="w-4 h-4 flex-none" />
+        <Icon className="w-5 h-5 flex-none" />
         <span className="flex-1 truncate font-medium">{section.label}</span>
       </NavLink>
     );
@@ -97,7 +97,7 @@ function NavSection({ section, collapsed, onNavigate }) {
           hasActiveChild ? 'text-sky-700 bg-sky-50' : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
         }`}
       >
-        <SectionIcon className="w-3.5 h-3.5 flex-none" />
+        <SectionIcon className="w-4 h-4 flex-none" />
         <span className="flex-1 text-left">{section.label}</span>
         <ChevronDown className={`w-3 h-3 flex-none transition-transform duration-200 ${open ? '' : '-rotate-90'}`} />
       </button>
@@ -111,13 +111,13 @@ function NavSection({ section, collapsed, onNavigate }) {
                 key={child.path}
                 to={child.path}
                 onClick={onNavigate}
-                className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 ${
                   isActive
                     ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-600/20'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
-                <ChildIcon className="w-3.5 h-3.5 flex-none" />
+                <ChildIcon className="w-4 h-4 flex-none" />
                 <span className="truncate">{child.label}</span>
               </NavLink>
             );

@@ -20,10 +20,10 @@ const treatmentPhases = [
 ];
 
 const quickStats = [
-  { label: 'LDH', value: '2,010', unit: 'U/L', trend: 'critical', normal: '< 225' },
-  { label: 'Plaquetas', value: '64,000', unit: '/µL', trend: 'critical', normal: '150-400K' },
-  { label: 'Hemoglobina', value: '8.1', unit: 'g/dL', trend: 'warn', normal: '13-17' },
-  { label: 'SUVmax', value: '26.7', unit: '', trend: 'critical', normal: '< 2' },
+  { label: 'LDH', value: '1,680', unit: 'U/L', trend: 'critical', normal: '< 225', prev: '1,850 (Abr 10)' },
+  { label: 'Plaquetas', value: '85,000', unit: '/µL', trend: 'critical', normal: '150-400K', prev: '72,000 (Abr 10)' },
+  { label: 'Hemoglobina', value: '9.2', unit: 'g/dL', trend: 'warn', normal: '13-17', prev: '8.8 (Abr 10)' },
+  { label: 'Creatinina', value: '1.2', unit: 'mg/dL', trend: 'safe', normal: '0.7-1.3', prev: '1.5 (Abr 10)' },
 ];
 
 const trendColors = {
@@ -100,6 +100,9 @@ export default function Dashboard() {
               <p className="text-xs font-medium opacity-70 mb-1">{stat.label}</p>
               <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
               <p className="text-[10px] opacity-60 mt-0.5">Normal: {stat.normal}</p>
+              {stat.prev && (
+                <p className="text-[10px] opacity-50 mt-0.5">Anterior: {stat.prev}</p>
+              )}
             </div>
           ))}
         </div>
