@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity, Calendar, FileText, NotebookPen, AlertCircle,
   TrendingUp, Clock, Users, Stethoscope, Bot, ChevronRight,
-  Heart, Shield, FlaskConical, ArrowRight, Thermometer
+  Heart, Shield, FlaskConical, ArrowRight, Thermometer, Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, Pill } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
+import { getPatientId } from '../lib/useSupabase';
 
 const treatmentPhases = [
   { name: 'Ingreso UCI', status: 'completed', date: 'Abr 6' },
@@ -19,12 +21,21 @@ const treatmentPhases = [
   { name: 'PET', status: 'upcoming', date: 'Post C2-4' },
 ];
 
-const quickStats = [
-  { label: 'LDH', value: '1,680', unit: 'U/L', trend: 'critical', normal: '< 225', prev: '1,850 (Abr 10)' },
-  { label: 'Plaquetas', value: '85,000', unit: '/µL', trend: 'critical', normal: '150-400K', prev: '72,000 (Abr 10)' },
-  { label: 'Hemoglobina', value: '9.2', unit: 'g/dL', trend: 'warn', normal: '13-17', prev: '8.8 (Abr 10)' },
-  { label: 'Creatinina', value: '1.2', unit: 'mg/dL', trend: 'safe', normal: '0.7-1.3', prev: '1.5 (Abr 10)' },
+// Key labs to display on dashboard — normal ranges for trend coloring
+const KEY_LABS = [
+  { name: 'LDH', unit: 'U/L', normalMax: 225, displayNormal: '< 225' },
+  { name: 'Plaquetas', unit: 'x10³/µL', normalMin: 150, normalMax: 400, displayNormal: '150-400K', formatValue: v => v >= 1000 ? v.toLocaleString('es-CO') : (v * 1000).toLocaleString('es-CO') },
+  { name: 'Hemoglobina', unit: 'g/dL', normalMin: 12.3, normalMax: 15.3, displayNormal: '12-15' },
+  { name: 'Creatinina', unit: 'mg/dL', normalMin: 0.7, normalMax: 1.3, displayNormal: '0.7-1.3' },
 ];
+
+function getTrend(value, lab) {
+  const v = parseFloat(value);
+  if (isNaN(v)) return 'warn';
+  if (lab.normalMin != null && v < lab.normalMin) return v < lab.normalMin * 0.7 ? 'critical' : 'warn';
+  if (lab.normalMax != null && v > lab.normalMax) return v > lab.normalMax * 2 ? 'critical' : 'warn';
+  return 'safe';
+}
 
 const trendColors = {
   critical: 'text-rose-600 bg-rose-50 border-rose-200',
@@ -34,8 +45,61 @@ const trendColors = {
 
 export default function Dashboard() {
   const { displayName } = useAuth();
+  const [labStats, setLabStats] = useState([]);
+  const [labsLoading, setLabsLoading] = useState(true);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
+
+  // Fetch latest lab values from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pid = await getPatientId();
+      if (!pid || cancelled) { setLabsLoading(false); return; }
+
+      const labNames = KEY_LABS.map(l => l.name);
+      const { data } = await supabase
+        .from('lab_results')
+        .select('lab_name, value, unit, result_date')
+        .eq('patient_id', pid)
+        .in('lab_name', labNames)
+        .order('result_date', { ascending: false });
+
+      if (!cancelled && data) {
+        const stats = KEY_LABS.map(lab => {
+          const rows = data.filter(r => r.lab_name === lab.name);
+          const latest = rows[0];
+          const previous = rows[1];
+          if (!latest) return null;
+
+          const val = parseFloat(latest.value);
+          const displayVal = lab.formatValue ? lab.formatValue(val) : val.toLocaleString('es-CO');
+          const date = new Date(latest.result_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+
+          let prevLabel = null;
+          if (previous) {
+            const pVal = parseFloat(previous.value);
+            const pDisplay = lab.formatValue ? lab.formatValue(pVal) : pVal.toLocaleString('es-CO');
+            const pDate = new Date(previous.result_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+            prevLabel = `${pDisplay} (${pDate})`;
+          }
+
+          return {
+            label: lab.name,
+            value: displayVal,
+            unit: lab.unit,
+            trend: getTrend(latest.value, lab),
+            normal: lab.displayNormal,
+            prev: prevLabel,
+            date,
+          };
+        }).filter(Boolean);
+        setLabStats(stats);
+      }
+      setLabsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -88,24 +152,33 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* Quick Stats */}
+      {/* Quick Stats — live from Supabase */}
       <div>
         <h2 className="text-sm font-semibold text-stone-900 mb-3 flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-sky-600" />
           Laboratorios clave
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {quickStats.map(stat => (
-            <div key={stat.label} className={`border rounded-xl p-4 ${trendColors[stat.trend]}`}>
-              <p className="text-xs font-medium opacity-70 mb-1">{stat.label}</p>
-              <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
-              <p className="text-[10px] opacity-60 mt-0.5">Normal: {stat.normal}</p>
-              {stat.prev && (
-                <p className="text-[10px] opacity-50 mt-0.5">Anterior: {stat.prev}</p>
-              )}
-            </div>
-          ))}
-        </div>
+        {labsLoading ? (
+          <div className="flex items-center justify-center py-8 text-stone-400">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            <span className="text-sm">Cargando laboratorios...</span>
+          </div>
+        ) : labStats.length === 0 ? (
+          <p className="text-sm text-stone-400 py-4">No hay laboratorios registrados aún.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {labStats.map(stat => (
+              <div key={stat.label} className={`border rounded-xl p-4 ${trendColors[stat.trend]}`}>
+                <p className="text-xs font-medium opacity-70 mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
+                <p className="text-[10px] opacity-60 mt-0.5">Normal: {stat.normal}</p>
+                {stat.prev && (
+                  <p className="text-[10px] opacity-50 mt-0.5">Anterior: {stat.prev}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
