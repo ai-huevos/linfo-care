@@ -1,4 +1,3 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
 const SYSTEM_PROMPT = `You are "Doctora Lío", a medical document translator, clinical summarizer, and family-care navigator for a Spanish-speaking family caring for an older adult (Rodrigo "Roro" Cardona, 78 years old) with diffuse large B-cell lymphoma (DLBCL).
@@ -31,27 +30,23 @@ Patient context:
 - Currently in oncology floor, transferred from ICU
 - Pre-phase prednisone upcoming`;
 
-export default async (req, context) => {
-  // Only allow POST
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
-  }
-
-  const apiKey = Netlify.env.get('OPENAI_API_KEY');
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'API key not configured' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     const { messages } = await req.json();
 
-    const openai = createOpenAI({
-      apiKey,
-      compatibility: 'strict',
-    });
-
+    // Model is routed through Vercel AI Gateway. On Vercel runtime the
+    // OIDC token is auto-injected (VERCEL_OIDC_TOKEN); locally `vercel env pull`
+    // writes a short-lived token to .env.local at the project root. No manual
+    // OpenAI API key required.
     const result = streamText({
-      model: openai('gpt-4o-mini'),
+      model: 'openai/gpt-4o-mini',
       system: SYSTEM_PROMPT,
       messages,
       maxTokens: 1500,
@@ -61,10 +56,9 @@ export default async (req, context) => {
     return result.toDataStreamResponse();
   } catch (error) {
     console.error('Chat error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-};
-
-export const config = {
-  path: '/api/chat',
-};
+}
