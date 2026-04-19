@@ -14,6 +14,8 @@ const Questions = lazy(() => import('./pages/medical/Questions'));
 const LabResults = lazy(() => import('./pages/medical/LabResults'));
 const BodyMap = lazy(() => import('./pages/medical/BodyMapEnhanced'));
 const Documents = lazy(() => import('./pages/medical/Documents'));
+const Treatment = lazy(() => import('./pages/medical/Treatment'));
+const Medications = lazy(() => import('./pages/medical/Medications'));
 
 // Family
 const Journal = lazy(() => import('./pages/family/Journal'));
@@ -79,8 +81,8 @@ export default function App() {
               <Route path="/medical/diagnosis" element={<Diagnosis />} />
               <Route path="/medical/bodymap" element={<BodyMap />} />
               <Route path="/medical/labs" element={<LabResults />} />
-              <Route path="/medical/treatment" element={<ComingSoon title="Plan de Tratamiento" />} />
-              <Route path="/medical/medications" element={<ComingSoon title="Medicamentos" />} />
+              <Route path="/medical/treatment" element={<Treatment />} />
+              <Route path="/medical/medications" element={<Medications />} />
               <Route path="/medical/documents" element={<Documents />} />
               <Route path="/medical/questions" element={<Questions />} />
 
