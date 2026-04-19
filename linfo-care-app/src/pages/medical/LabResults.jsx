@@ -58,7 +58,7 @@ function TrendIcon({ trend }) {
 }
 
 export default function LabResults() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -126,6 +126,7 @@ export default function LabResults() {
       </SectionTitle>
 
       {/* Add result */}
+      {isAdmin && (
       <div className="flex justify-end">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -135,6 +136,7 @@ export default function LabResults() {
           Agregar resultado
         </button>
       </div>
+      )}
 
       {showAddForm && (
         <Card>

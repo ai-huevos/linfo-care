@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { getPatientId } from '../../lib/useSupabase';
 
 export default function Questions() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [answers, setAnswers] = useState({});
   const [openQuestion, setOpenQuestion] = useState(null);
   const [saveStatus, setSaveStatus] = useState('');

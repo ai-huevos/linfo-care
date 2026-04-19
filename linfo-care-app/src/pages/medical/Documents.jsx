@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Upload, Trash2, Download, Eye, Loader2, Wifi, Search, Filter, File, Image, FileSpreadsheet } from 'lucide-react';
+import { FileText, Upload, Trash2, Download, Eye, Loader2, Wifi, Search, Filter, File, Image, FileSpreadsheet, Sparkles, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { SectionTitle, Card, Pill } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
@@ -29,7 +29,7 @@ function formatSize(bytes) {
 }
 
 export default function Documents() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -37,6 +37,9 @@ export default function Documents() {
   const [filterType, setFilterType] = useState('all');
   const [showUpload, setShowUpload] = useState(false);
   const [form, setForm] = useState({ title: '', doc_type: 'other', description: '' });
+  const [ocrResult, setOcrResult] = useState(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrDoc, setOcrDoc] = useState(null);  // document being analyzed
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -100,6 +103,80 @@ export default function Documents() {
     setDocs(prev => prev.filter(d => d.id !== doc.id));
   };
 
+  // OCR: Extract data from a document using AI
+  const extractDocument = async (doc) => {
+    setOcrDoc(doc);
+    setOcrLoading(true);
+    setOcrResult(null);
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/extract-document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_url: doc.file_url,
+          doc_type: doc.doc_type,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setOcrResult(data.extracted);
+      } else {
+        setOcrResult({ error: data.error || 'Error al extraer datos' });
+      }
+    } catch (err) {
+      setOcrResult({ error: err.message });
+    }
+    setOcrLoading(false);
+  };
+
+  // Save extracted data to DB
+  const saveExtractedData = async () => {
+    if (!ocrResult) return;
+    const pid = await getPatientId();
+    let savedCount = 0;
+
+    // Save medications
+    if (ocrResult.medications?.length) {
+      const medsToInsert = ocrResult.medications.map(m => ({
+        patient_id: pid,
+        name: m.name,
+        dose: m.dose || 'Por confirmar',
+        frequency: m.frequency || 'Según indicación médica',
+        category: m.category || 'otro',
+        status: 'active',
+        notes: m.notes || '',
+        side_effects: '',
+        updated_by: user?.id,
+      }));
+      const { data } = await supabase.from('medications').insert(medsToInsert).select();
+      savedCount += data?.length || 0;
+    }
+
+    // Save lab results
+    if (ocrResult.lab_results?.length) {
+      const labsToInsert = ocrResult.lab_results.map(l => ({
+        patient_id: pid,
+        entered_by: user?.id,
+        lab_name: l.lab_name,
+        value: l.value,
+        unit: l.unit || '',
+        normal_min: l.normal_min,
+        normal_max: l.normal_max,
+        result_date: l.result_date || new Date().toISOString().slice(0, 10),
+        notes: l.notes || `Extraído de: ${ocrDoc?.title}`,
+      }));
+      const { data } = await supabase.from('lab_results').insert(labsToInsert).select();
+      savedCount += data?.length || 0;
+    }
+
+    alert(`✅ ${savedCount} registros guardados exitosamente`);
+    setOcrResult(null);
+    setOcrDoc(null);
+  };
+
   const filtered = docs.filter(d => {
     const matchSearch = d.title?.toLowerCase().includes(search.toLowerCase()) || d.file_name?.toLowerCase().includes(search.toLowerCase());
     const matchType = filterType === 'all' || d.doc_type === filterType;
@@ -126,13 +203,15 @@ export default function Documents() {
           <Wifi className="w-3 h-3" />
           <span>Documentos compartidos con toda la familia</span>
         </div>
-        <button
-          onClick={() => setShowUpload(!showUpload)}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all"
-        >
-          <Upload className="w-4 h-4" />
-          Subir documento
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowUpload(!showUpload)}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all"
+          >
+            <Upload className="w-4 h-4" />
+            Subir documento
+          </button>
+        )}
       </div>
 
       {/* Upload form */}
@@ -273,6 +352,21 @@ export default function Documents() {
                     >
                       <Eye className="w-4 h-4" />
                     </a>
+                    {isAdmin && (
+                      <button
+                        onClick={() => extractDocument(doc)}
+                        disabled={ocrLoading && ocrDoc?.id === doc.id}
+                        className="p-2 text-stone-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+                        title="Extraer datos con IA"
+                      >
+                        {ocrLoading && ocrDoc?.id === doc.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                    {isAdmin && (
                     <button
                       onClick={() => deleteDoc(doc)}
                       className="p-2 text-stone-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
@@ -280,11 +374,136 @@ export default function Documents() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                    )}
                   </div>
                 </div>
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* OCR Extraction Results Modal */}
+      {(ocrResult || ocrLoading) && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" onClick={() => { if (!ocrLoading) { setOcrResult(null); setOcrDoc(null); } }}>
+          <Card className="!max-w-2xl w-full my-8 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-stone-900">Extracción con IA</h3>
+                <p className="text-xs text-stone-500">{ocrDoc?.title}</p>
+              </div>
+            </div>
+
+            {ocrLoading ? (
+              <div className="flex flex-col items-center py-12 gap-3">
+                <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+                <p className="text-sm text-stone-500">Analizando documento con GPT-4o Vision...</p>
+                <p className="text-xs text-stone-400">Esto puede tomar 15-30 segundos</p>
+              </div>
+            ) : ocrResult?.error ? (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-rose-700 mb-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Error en la extracción</span>
+                </div>
+                <p className="text-xs text-rose-600">{ocrResult.error}</p>
+              </div>
+            ) : ocrResult ? (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {/* Summary */}
+                {ocrResult.summary && (
+                  <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
+                    <p className="text-sm text-sky-900"><strong>Resumen:</strong> {ocrResult.summary}</p>
+                    {ocrResult.document_date && (
+                      <p className="text-xs text-sky-700 mt-1">Fecha del documento: {ocrResult.document_date}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Medications found */}
+                {ocrResult.medications?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
+                      💊 Medicamentos encontrados ({ocrResult.medications.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {ocrResult.medications.map((med, i) => (
+                        <div key={i} className="bg-white border border-stone-200 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-stone-900">{med.name}</span>
+                            <span className="text-[10px] px-2 py-0.5 bg-stone-100 rounded-full text-stone-600">{med.category}</span>
+                          </div>
+                          <div className="text-xs text-stone-500 space-y-0.5">
+                            {med.dose && <p>Dosis: {med.dose}</p>}
+                            {med.frequency && <p>Frecuencia: {med.frequency}</p>}
+                            {med.route && <p>Vía: {med.route}</p>}
+                            {med.notes && <p className="text-stone-400 italic">{med.notes}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Lab results found */}
+                {ocrResult.lab_results?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
+                      🔬 Resultados de laboratorio ({ocrResult.lab_results.length})
+                    </h4>
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      {ocrResult.lab_results.map((lab, i) => (
+                        <div key={i} className="bg-white border border-stone-200 rounded-lg p-3">
+                          <p className="text-sm font-medium text-stone-900">{lab.lab_name}</p>
+                          <p className="text-lg font-bold text-sky-700">{lab.value} <span className="text-xs font-normal text-stone-500">{lab.unit}</span></p>
+                          {(lab.normal_min != null || lab.normal_max != null) && (
+                            <p className="text-[10px] text-stone-400">Rango: {lab.normal_min} – {lab.normal_max} {lab.unit}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Authorization info */}
+                {ocrResult.authorization?.number && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-amber-900 mb-1">📋 Autorización</h4>
+                    <p className="text-xs text-amber-800">Número: {ocrResult.authorization.number}</p>
+                    {ocrResult.authorization.entity && <p className="text-xs text-amber-800">Entidad: {ocrResult.authorization.entity}</p>}
+                  </div>
+                )}
+
+                {/* Doctor notes */}
+                {ocrResult.doctor_notes && (
+                  <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-stone-700 mb-1">📝 Notas del médico</h4>
+                    <p className="text-xs text-stone-600 whitespace-pre-wrap">{ocrResult.doctor_notes}</p>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-3 pt-2 border-t border-stone-200">
+                  <button
+                    onClick={saveExtractedData}
+                    className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-medium px-4 py-3 rounded-xl hover:from-emerald-700 hover:to-teal-700 shadow-md transition-all"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    Guardar datos extraídos
+                  </button>
+                  <button
+                    onClick={() => { setOcrResult(null); setOcrDoc(null); }}
+                    className="px-4 py-3 text-sm font-medium text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </Card>
         </div>
       )}
     </div>

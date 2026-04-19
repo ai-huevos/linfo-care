@@ -23,10 +23,12 @@ function getWeekDays(startDate) {
 }
 
 export default function CareShifts() {
-  const { user, displayName } = useAuth();
+  const { user, displayName, isGuest, isAdmin } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
   const [shifts, setShifts] = useState({});
   const [loading, setLoading] = useState(true);
+  const [guestName, setGuestName] = useState(() => localStorage.getItem('linfocare_guest_name') || '');
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
 
   const baseDate = new Date();
   baseDate.setDate(baseDate.getDate() + weekOffset * 7);
@@ -68,11 +70,28 @@ export default function CareShifts() {
     return () => { cancelled = true; };
   }, [weekOffset]);
 
+  const effectiveName = isGuest ? guestName : displayName;
+
+  const handleShiftClick = (dateStr, slotId) => {
+    if (isGuest && !guestName) {
+      setShowNamePrompt(true);
+      return;
+    }
+    toggleShift(dateStr, slotId);
+  };
+
+  const saveGuestName = (name) => {
+    setGuestName(name);
+    localStorage.setItem('linfocare_guest_name', name);
+    setShowNamePrompt(false);
+  };
+
   const toggleShift = useCallback(async (dateStr, slotId) => {
     const key = `${dateStr}:${slotId}`;
     const pid = await getPatientId();
+    const shiftName = isGuest ? guestName : displayName;
 
-    if (shifts[key]?.volunteerId === user?.id) {
+    if (shifts[key] && (shifts[key].volunteerId === user?.id || (isGuest && shifts[key].guestName === guestName))) {
       // Remove yourself
       if (shifts[key].dbId) {
         await supabase.from('care_shifts').delete().eq('id', shifts[key].dbId);
@@ -84,24 +103,30 @@ export default function CareShifts() {
       });
     } else if (!shifts[key]) {
       // Sign up
+      const insertData = {
+        patient_id: pid,
+        shift_date: dateStr,
+        slot: slotId,
+        volunteer_name: shiftName,
+      };
+      if (!isGuest) {
+        insertData.volunteer_id = user?.id;
+      } else {
+        insertData.guest_name = guestName;
+      }
+
       const { data } = await supabase
         .from('care_shifts')
-        .insert({
-          patient_id: pid,
-          volunteer_id: user?.id,
-          shift_date: dateStr,
-          slot: slotId,
-          volunteer_name: displayName,
-        })
+        .insert(insertData)
         .select()
         .single();
 
       setShifts(prev => ({
         ...prev,
-        [key]: { name: displayName, at: new Date().toISOString(), dbId: data?.id, volunteerId: user?.id },
+        [key]: { name: shiftName, at: new Date().toISOString(), dbId: data?.id, volunteerId: user?.id, guestName: isGuest ? guestName : null },
       }));
     }
-  }, [shifts, user, displayName]);
+  }, [shifts, user, displayName, guestName, isGuest]);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -197,7 +222,7 @@ export default function CareShifts() {
                       return (
                         <button
                           key={key}
-                          onClick={() => !isPast && toggleShift(dateStr, slot.id)}
+                          onClick={() => !isPast && handleShiftClick(dateStr, slot.id)}
                           disabled={isPast}
                           className={`flex items-center justify-center p-2 rounded-lg border text-center min-h-[56px] transition-all duration-200 ${
                             shift
@@ -235,6 +260,45 @@ export default function CareShifts() {
               Si necesitas cancelar, haz clic de nuevo en tu turno. Los turnos pasados quedan bloqueados.
             </p>
           </Card>
+
+          {/* Guest name prompt modal */}
+          {showNamePrompt && (
+            <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowNamePrompt(false)}>
+              <Card className="!max-w-sm w-full animate-slide-up" onClick={e => e.stopPropagation()}>
+                <h3 className="text-lg font-semibold text-stone-900 mb-2">¿Cómo te llamas?</h3>
+                <p className="text-sm text-stone-500 mb-4">Tu nombre aparecerá en el turno para que la familia sepa quién va.</p>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Ej: Tía Martha"
+                  className="w-full px-4 py-3 text-sm border border-stone-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && e.target.value.trim()) {
+                      saveGuestName(e.target.value.trim());
+                    }
+                  }}
+                />
+                <p className="text-[11px] text-stone-400 mt-2">Presiona Enter para continuar</p>
+              </Card>
+            </div>
+          )}
+
+          {/* Show current guest name with option to change */}
+          {isGuest && guestName && (
+            <Card className="!py-3 !px-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-stone-600">
+                  Anotándote como: <strong className="text-stone-900">{guestName}</strong>
+                </p>
+                <button
+                  onClick={() => setShowNamePrompt(true)}
+                  className="text-xs text-sky-600 hover:text-sky-700 font-medium"
+                >
+                  Cambiar nombre
+                </button>
+              </div>
+            </Card>
+          )}
 
           {/* Today's shifts */}
           <Card>

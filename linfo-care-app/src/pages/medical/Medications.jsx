@@ -30,7 +30,7 @@ const statusConfig = {
 };
 
 export default function Medications() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -131,13 +131,15 @@ export default function Medications() {
           <Wifi className="w-3 h-3" />
           <span>Sincronizado — cambios visibles para toda la familia</span>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar medicamento
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Agregar medicamento
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -254,6 +256,7 @@ export default function Medications() {
                           <p className="text-xs text-amber-800 leading-relaxed">{med.side_effects}</p>
                         </div>
                       )}
+                      {isAdmin && (
                       <div className="flex gap-1.5 pt-1">
                         {['active', 'pending', 'paused', 'stopped'].map(s => (
                           <button
@@ -268,6 +271,7 @@ export default function Medications() {
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
+                      )}
                     </div>
                   )}
                 </div>

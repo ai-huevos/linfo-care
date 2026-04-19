@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { Stethoscope, Mail, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Stethoscope, Mail, ArrowRight, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../lib/auth';
+import { useNavigate } from 'react-router-dom';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 export default function Login() {
-  const { signInWithMagicLink } = useAuth();
+  const { signInWithMagicLink, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,7 +46,18 @@ export default function Login() {
             <Stethoscope className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-serif font-normal text-stone-900 tracking-tight">LinfoCare</h1>
-          <p className="text-base text-stone-500 mt-1">Centro de cuidado de Roro</p>
+          <p className="text-base text-stone-500 mt-1">Panel de administración</p>
+        </div>
+
+        {/* Back to portal link */}
+        <div className="text-center mb-4">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-1.5 text-sm text-sky-600 hover:text-sky-700 font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver al portal familiar
+          </button>
         </div>
 
         {/* Card */}
@@ -96,9 +109,9 @@ export default function Login() {
           ) : (
             /* ── LOGIN FORM ── */
             <>
-              <h2 className="text-xl font-semibold text-stone-900 mb-2">Bienvenido 👋</h2>
+              <h2 className="text-xl font-semibold text-stone-900 mb-2">Acceso administrador 🔑</h2>
               <p className="text-base text-stone-600 mb-6 leading-relaxed">
-                Escribe tu correo electrónico. Te llegará un enlace para entrar — <strong>no necesitas contraseña</strong>.
+                Escribe tu correo electrónico autorizado. Te llegará un enlace para entrar como admin — <strong>no necesitas contraseña</strong>.
               </p>
 
               {/* How it works */}

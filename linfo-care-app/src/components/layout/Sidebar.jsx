@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Home, Stethoscope, Users, Utensils, BookOpen,
   Activity, MapPin, FlaskConical, Pill, FileText, HelpCircle,
   Calendar, NotebookPen, Package, CheckSquare, MessageCircle,
   ChevronDown, ChevronRight, X, Menu, LogOut, Bot,
-  Shield, BookOpenCheck
+  Shield, BookOpenCheck, KeyRound
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
@@ -129,7 +129,7 @@ function NavSection({ section, collapsed, onNavigate }) {
 }
 
 export default function Sidebar({ mobileOpen, onClose }) {
-  const { displayName, signOut, isDemo } = useAuth();
+  const { displayName, signOut, isAdmin, isGuest, isDemo } = useAuth();
 
   const sidebarContent = (
     <>
@@ -169,24 +169,37 @@ export default function Sidebar({ mobileOpen, onClose }) {
         </NavLink>
       </div>
 
-      {/* User */}
+      {/* User / Admin section */}
       <div className="p-4 border-t border-stone-200/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow">
-            {displayName.charAt(0).toUpperCase()}
+        {isAdmin ? (
+          /* Logged-in admin */
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-stone-800 truncate">{displayName}</p>
+              <p className="text-[10px] text-emerald-600 font-medium">Admin ✓</p>
+            </div>
+            <button
+              onClick={signOut}
+              className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-stone-800 truncate">{displayName}</p>
-            <p className="text-[10px] text-stone-400">{isDemo ? 'Modo demo' : 'Conectado'}</p>
-          </div>
-          <button
-            onClick={signOut}
-            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-            title="Cerrar sesión"
+        ) : (
+          /* Guest — show admin login link */
+          <Link
+            to="/admin/login"
+            onClick={onClose}
+            className="flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-all duration-200"
           >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+            <KeyRound className="w-4 h-4 flex-none" />
+            <span className="font-medium">Administrar</span>
+          </Link>
+        )}
       </div>
     </>
   );

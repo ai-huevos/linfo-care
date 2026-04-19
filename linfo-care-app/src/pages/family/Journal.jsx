@@ -5,7 +5,7 @@ import { useAuth } from '../../lib/auth';
 import { useSupabaseTable } from '../../lib/useSupabase';
 
 export default function Journal() {
-  const { user, displayName } = useAuth();
+  const { user, displayName, isAdmin } = useAuth();
   const { data: entries, loading, insert, remove } = useSupabaseTable('journal_entries');
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -39,6 +39,7 @@ export default function Journal() {
       </div>
 
       {/* New entry */}
+      {isAdmin && (
       <Card>
         <h3 className="text-base font-semibold text-stone-900 mb-3 flex items-center gap-2">
           <NotebookPen className="w-4 h-4 text-sky-600" />
@@ -60,6 +61,7 @@ export default function Journal() {
           Guardar con fecha y hora
         </button>
       </Card>
+      )}
 
       {/* Entries */}
       {loading ? (
@@ -94,12 +96,14 @@ export default function Journal() {
                   </div>
                   <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">{entry.content}</p>
                 </div>
+                {isAdmin && (
                 <button
                   onClick={() => deleteEntry(entry.id)}
                   className="p-1.5 text-stone-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors flex-none"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                )}
               </div>
             </Card>
           ))}

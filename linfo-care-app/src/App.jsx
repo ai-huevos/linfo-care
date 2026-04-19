@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './lib/auth';
+import { AuthProvider } from './lib/auth';
 import Layout from './components/layout/Layout';
 
 // Lazy-loaded pages
@@ -32,21 +32,6 @@ const DailyCare = lazy(() => import('./pages/care/DailyCare'));
 const Glossary = lazy(() => import('./pages/reference/Glossary'));
 const Scenarios = lazy(() => import('./pages/reference/Scenarios'));
 
-// Placeholder for pages still in progress
-function ComingSoon({ title }) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-stone-200 to-stone-300 flex items-center justify-center mb-4">
-        <span className="text-2xl">🚧</span>
-      </div>
-      <h2 className="text-xl font-serif text-stone-900 mb-2">{title}</h2>
-      <p className="text-sm text-stone-500 max-w-md">
-        Esta sección está en construcción. Pronto podrás acceder a toda la información aquí.
-      </p>
-    </div>
-  );
-}
-
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -55,26 +40,17 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (!user) return <Login />;
-  return children;
-}
-
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
+            {/* Admin login — standalone page, no layout */}
+            <Route path="/admin/login" element={<Login />} />
+
+            {/* All pages are public — no ProtectedRoute */}
+            <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
 
               {/* Medical Record */}
