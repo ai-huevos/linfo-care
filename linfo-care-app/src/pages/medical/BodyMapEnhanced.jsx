@@ -17,53 +17,68 @@ import {
    ────────────────────────────────────────────────────────────────────────── */
 // Positions are % of the body frame (which matches the SVG's 200×520 viewBox).
 // x_pct = x_viewBox / 2   ·   y_pct = y_viewBox / 5.2
+//
+// Findings reconciled against:
+//   • PET/CT 18F-FDG del 07/04/2026 (Research/1304 CO80232782 PET SCAN INFORME.pdf)
+//   • Mielograma del 14/04/2026, informe 17/04/2026 (Research/Patologia Mielograma.pdf)
+//   • Biopsia duodenal 08/04/2026 (Research/Patologia Estomago.pdf)
+//   • Radiografías de tórax 15–16/04/2026
 const BODY_REGIONS = [
-  // CRITICAL
+  // CRITICAL — compromiso neoplásico documentado por PET o biopsia
+  { id: 'chest-l',  side: 'front', x: 56,   y: 23,   severity: 'critical', organ: 'lung-left',
+    label: 'Pulmón/Pleura Izquierda',
+    notes: 'Derrame pleural izquierdo persistente (RX 16/04). Nódulo LSI apicoposterior SUVmax 12.2, 16 mm (PET 07/04). Vigilar disnea y saturación.' },
   { id: 'chest-r',  side: 'front', x: 44,   y: 23,   severity: 'critical', organ: 'lung-right',
-    label: 'Pulmón/Pleura Derecha',
-    notes: 'Derrame pleural, tubo de tórax activo. Vigilar disnea y drenaje cada turno.' },
+    label: 'Pulmón Derecho',
+    notes: 'Nódulo LSD anterior SUVmax 14.6 de 22 mm; LSD apical SUVmax 13.5 de 17 mm. Tubo de toracostomía en base pulmonar derecha. Enfisema subcutáneo pared derecha.' },
   { id: 'spleen',   side: 'front', x: 58,   y: 35,   severity: 'critical', organ: 'spleen',
     label: 'Bazo',
-    notes: 'Esplenomegalia marcada 18 cm. Masa esplénica SUVmax 26.7.' },
-  // ALERT
-  { id: 'mouth',    side: 'front', x: 50,   y: 8.5,  severity: 'alert',
-    label: 'Boca',
-    notes: 'Mucositis potencial — enjuague bicarbonato 4–6 veces/día. Revisar placas blancas.' },
+    notes: 'Bazo 11.2 cm con aumento difuso del metabolismo. Lesión hipermetabólica polo superior SUVmax 25.6 de 42×46 mm — sospecha de infiltración neoplásica.' },
+  { id: 'pelvis',   side: 'front', x: 50,   y: 55,   severity: 'critical', organ: 'pelvis',
+    label: 'Médula Ósea · Pelvis',
+    notes: 'Mielograma (17/04): infiltración masiva por linfoma B difuso de células grandes — 70% de celularidad tumoral. Lesiones líticas en ilíacos SUVmax 7.7, sacro y fémures. Riesgo de fractura patológica.' },
+  // ALERT — adenopatías activas, compromiso óseo localizado, riesgo inminente
   { id: 'neck',     side: 'front', x: 50,   y: 13,   severity: 'alert',
     label: 'Ganglios Cervicales',
-    notes: 'Masas palpables cervicales bilaterales. Verificar evolución semanal.' },
+    notes: 'Adenopatías supraclaviculares bilaterales, predominio izquierdo. SUVmax 10.3, 11×18 mm. Foco en cartílago tiroides derecho SUVmax 4.2. Tiroides sin lesiones.' },
+  { id: 'mediastinum', side: 'front', x: 50, y: 25,  severity: 'alert',
+    label: 'Ganglios Mediastinales',
+    notes: 'Adenopatías prevasculares, paratraqueales, subaórticas, subcarinales e hiliares bilaterales. Dominantes: subcarinal SUVmax 11.9 (21 mm); hiliar derecho SUVmax 11.1 (27 mm).' },
   { id: 'ribs-r',   side: 'front', x: 41,   y: 31,   severity: 'alert',
     label: 'Costillas Derechas',
-    notes: 'Fractura costal derecha por lesión lítica. Manejo del dolor activo.' },
-  { id: 'pelvis',   side: 'front', x: 50,   y: 55,   severity: 'alert', organ: 'pelvis',
-    label: 'Pelvis/Huesos',
-    notes: 'Infiltración ósea múltiple. Lesiones líticas en PET. Riesgo de fracturas.' },
-  // MONITOR
+    notes: 'Fractura del 11º arco costal posterior derecho. Lesión de tejidos blandos en 3er arco costal. 2ª unión costovertebral SUVmax 9.3. Manejo activo del dolor.' },
+  { id: 'abdomen-ln', side: 'front', x: 50, y: 44,   severity: 'alert',
+    label: 'Ganglios Abdominales',
+    notes: 'Conglomerados en hilio hepático, retrocrural, periesplénico SUVmax 26.7 (23 mm), peripancreático SUVmax 20.7, mesentérico SUVmax 13.7 (28×39 mm).' },
+  { id: 'stomach',  side: 'front', x: 50,   y: 38,   severity: 'alert',
+    label: 'Duodeno / Estómago',
+    notes: 'Biopsia duodenal (12/04): linfoma B difuso fenotipo activado (Hans). Gastritis crónica con atrofia severa antral (OLGA 4). H. pylori negativo.' },
+  // MONITOR — sin compromiso documentado o profiláctico
   { id: 'head',     side: 'front', x: 50,   y: 6,    severity: 'monitor',
     label: 'Cabeza',
-    notes: 'Delirio: vigilar orientación, confusión nocturna.' },
+    notes: 'Parénquima cerebral normal en PET. TAC cráneo (12/04): ateromatosis carotídea intracraneana. Vigilar orientación y delirio nocturno.' },
+  { id: 'mouth',    side: 'front', x: 50,   y: 8.5,  severity: 'monitor',
+    label: 'Boca',
+    notes: 'Profilaxis mucositis: enjuague con bicarbonato 4–6 veces/día. Revisar placas blancas (candidiasis).' },
   { id: 'heart',    side: 'front', x: 47.5, y: 27,   severity: 'monitor', organ: 'heart',
     label: 'Corazón',
-    notes: 'Riesgo cardiotoxicidad por doxorrubicina en R-CHOP. Ecocardiograma basal pendiente.' },
-  { id: 'chest-l',  side: 'front', x: 56,   y: 23,   severity: 'monitor', organ: 'lung-left',
-    label: 'Pulmón Izquierdo',
-    notes: 'Sin hallazgos significativos en PET.' },
+    notes: 'Riesgo de cardiotoxicidad por doxorrubicina (R-CHOP). Ecocardiograma basal obligatorio antes de cada ciclo.' },
   { id: 'liver',    side: 'front', x: 42,   y: 37,   severity: 'monitor', organ: 'liver',
     label: 'Hígado',
-    notes: 'Verificar función hepática antes de cada ciclo de quimio.' },
-  { id: 'legs',     side: 'front', x: 50,   y: 78,   severity: 'monitor',
-    label: 'Piernas',
-    notes: 'Riesgo TVP por inmovilidad. Medias de compresión si plaquetas >50k.' },
+    notes: 'Hígado 16 cm sin lesiones hipermetabólicas en PET. Función hepática a verificar antes de cada ciclo.' },
+  { id: 'legs',     side: 'front', x: 50,   y: 78,   severity: 'alert',
+    label: 'Fémures',
+    notes: 'Lesiones hipermetabólicas en tercio proximal de ambos fémures y tercio medio del fémur derecho (SUVmax 7.9). Riesgo de fractura patológica — movilizar con precaución.' },
   // BACK VIEW
-  { id: 'spine',    side: 'back',  x: 50,   y: 30,   severity: 'alert', organ: 'spine',
+  { id: 'spine',    side: 'back',  x: 50,   y: 30,   severity: 'critical', organ: 'spine',
     label: 'Columna',
-    notes: 'Lesiones espinales — monitorear dolor radicular, debilidad neurológica.' },
+    notes: 'Múltiples cuerpos vertebrales comprometidos. C1 derecho SUVmax 6.5, apófisis espinosa C2. Sacro con hipermetabolismo. Monitorear dolor radicular y déficit neurológico.' },
   { id: 'kidneys',  side: 'back',  x: 50,   y: 49,   severity: 'monitor', organ: 'kidneys',
     label: 'Riñones',
-    notes: 'Creatinina 1.2 (mejorada). Hidratación agresiva para prevenir lisis tumoral.' },
+    notes: 'Creatinina 0.94 mg/dL (18/04) — función renal preservada. Hidratación agresiva para prevenir síndrome de lisis tumoral.' },
   { id: 'skin',     side: 'back',  x: 50,   y: 60,   severity: 'monitor',
     label: 'Piel',
-    notes: 'Revisar úlceras por presión cada turno. Cambio posicional cada 2 h.' },
+    notes: 'Inmovilidad prolongada: revisar úlceras por presión cada turno. Cambio posicional cada 2 h. Plaquetas 118×10³/μL (15/04) — evitar trauma.' },
 ];
 
 const SEVERITY = {
@@ -250,16 +265,22 @@ const SCENE_CSS = `
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* Detail panel (dark glass) */
+/* Detail panel (dark glass) — readable frosted edge against the scene gradient */
 .lc-glass {
-  background: linear-gradient(135deg, rgba(30,41,59,0.72) 0%, rgba(15,23,42,0.60) 100%);
-  border: 1px solid rgba(148,163,184,0.18);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(2,6,23,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  background:
+    linear-gradient(135deg, rgba(71,85,105,0.28) 0%, rgba(15,23,42,0.55) 100%),
+    linear-gradient(180deg, rgba(30,41,59,0.78) 0%, rgba(15,23,42,0.70) 100%);
+  border: 1px solid rgba(148,163,184,0.32);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 1px rgba(148,163,184,0.08),          /* subtle outer ring */
+    0 24px 48px -12px rgba(2,6,23,0.55),       /* ambient drop */
+    inset 0 1px 0 rgba(255,255,255,0.06),      /* top highlight */
+    inset 0 -1px 0 rgba(0,0,0,0.35);           /* bottom anchor */
 }
-.lc-glass-critical { border-color: rgba(255,77,110,0.45); box-shadow: 0 0 0 1px rgba(255,77,110,0.25), 0 20px 40px rgba(2,6,23,0.5); }
+.lc-glass-critical { border-color: rgba(255,77,110,0.45); box-shadow: 0 0 0 1px rgba(255,77,110,0.25), 0 24px 48px -12px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.06); }
 .lc-glass-alert    { border-color: rgba(251,191,36,0.45); }
 .lc-glass-monitor  { border-color: rgba(56,189,248,0.45); }
 
