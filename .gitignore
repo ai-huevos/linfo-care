@@ -8,4 +8,5 @@ Research/imaging-export.json
 Research/portal-export.json
 Research/consolidated-labs.json
 Research/sync-labs.sql
+Research/cleanup-bogus-labs.sql
 Research/portal-pdfs/
