@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Home, Stethoscope, Users, Utensils, BookOpen,
   Activity, MapPin, FlaskConical, Pill, FileText, HelpCircle,
   Calendar, NotebookPen, Package, CheckSquare, MessageCircle,
   ChevronDown, ChevronRight, X, Menu, LogOut, Bot,
-  Shield, BookOpenCheck
+  Shield, BookOpenCheck, KeyRound, Gift
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
@@ -38,6 +38,7 @@ const navSections = [
       { label: 'Turnos', icon: Calendar, path: '/family/shifts' },
       { label: 'Diario', icon: NotebookPen, path: '/family/journal' },
       { label: 'Inventario', icon: Package, path: '/family/inventory' },
+      { label: 'Regalos', icon: Gift, path: '/family/gifts' },
       { label: 'Checklist diario', icon: CheckSquare, path: '/family/checklist' },
       { label: 'WhatsApp', icon: MessageCircle, path: '/family/export' },
     ],
@@ -74,13 +75,13 @@ function NavSection({ section, collapsed, onNavigate }) {
       <NavLink
         to={section.path}
         onClick={onNavigate}
-        className={`flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+        className={`flex items-center gap-2.5 px-3 py-3 text-sm rounded-lg transition-all duration-200 ${
           isActive
             ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-600/20'
             : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
         }`}
       >
-        <Icon className="w-4 h-4 flex-none" />
+        <Icon className="w-5 h-5 flex-none" />
         <span className="flex-1 truncate font-medium">{section.label}</span>
       </NavLink>
     );
@@ -97,7 +98,7 @@ function NavSection({ section, collapsed, onNavigate }) {
           hasActiveChild ? 'text-sky-700 bg-sky-50' : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
         }`}
       >
-        <SectionIcon className="w-3.5 h-3.5 flex-none" />
+        <SectionIcon className="w-4 h-4 flex-none" />
         <span className="flex-1 text-left">{section.label}</span>
         <ChevronDown className={`w-3 h-3 flex-none transition-transform duration-200 ${open ? '' : '-rotate-90'}`} />
       </button>
@@ -111,13 +112,13 @@ function NavSection({ section, collapsed, onNavigate }) {
                 key={child.path}
                 to={child.path}
                 onClick={onNavigate}
-                className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 ${
                   isActive
                     ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-600/20'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
-                <ChildIcon className="w-3.5 h-3.5 flex-none" />
+                <ChildIcon className="w-4 h-4 flex-none" />
                 <span className="truncate">{child.label}</span>
               </NavLink>
             );
@@ -129,7 +130,7 @@ function NavSection({ section, collapsed, onNavigate }) {
 }
 
 export default function Sidebar({ mobileOpen, onClose }) {
-  const { displayName, signOut, isDemo } = useAuth();
+  const { displayName, signOut, isAdmin, isGuest, isDemo } = useAuth();
 
   const sidebarContent = (
     <>
@@ -169,24 +170,37 @@ export default function Sidebar({ mobileOpen, onClose }) {
         </NavLink>
       </div>
 
-      {/* User */}
+      {/* User / Admin section */}
       <div className="p-4 border-t border-stone-200/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow">
-            {displayName.charAt(0).toUpperCase()}
+        {isAdmin ? (
+          /* Logged-in admin */
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-stone-800 truncate">{displayName}</p>
+              <p className="text-[10px] text-emerald-600 font-medium">Admin ✓</p>
+            </div>
+            <button
+              onClick={signOut}
+              className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-stone-800 truncate">{displayName}</p>
-            <p className="text-[10px] text-stone-400">{isDemo ? 'Modo demo' : 'Conectado'}</p>
-          </div>
-          <button
-            onClick={signOut}
-            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-            title="Cerrar sesión"
+        ) : (
+          /* Guest — show admin login link */
+          <Link
+            to="/admin/login"
+            onClick={onClose}
+            className="flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-all duration-200"
           >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+            <KeyRound className="w-4 h-4 flex-none" />
+            <span className="font-medium">Administrar</span>
+          </Link>
+        )}
       </div>
     </>
   );

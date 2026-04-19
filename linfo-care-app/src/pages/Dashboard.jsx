@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Activity, Calendar, FileText, NotebookPen, AlertCircle,
   TrendingUp, Clock, Users, Stethoscope, Bot, ChevronRight,
-  Heart, Shield, FlaskConical, ArrowRight
+  Heart, Shield, FlaskConical, ArrowRight, Thermometer
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, Pill } from '../components/ui';
@@ -11,19 +11,19 @@ import { useAuth } from '../lib/auth';
 const treatmentPhases = [
   { name: 'Ingreso UCI', status: 'completed', date: 'Abr 6' },
   { name: 'Diagnóstico', status: 'completed', date: 'Abr 7-13' },
-  { name: 'Oncología', status: 'active', date: 'Abr 14+' },
-  { name: 'Pre-fase', status: 'upcoming', date: 'Pendiente' },
-  { name: 'Ciclo 1', status: 'upcoming', date: 'Pendiente' },
+  { name: 'Oncología', status: 'completed', date: 'Abr 14-17' },
+  { name: 'UCI Hemato', status: 'active', date: 'Abr 18+' },
+  { name: 'Protocolo', status: 'upcoming', date: 'Pendiente' },
+  { name: 'Quimio C1', status: 'upcoming', date: 'Por definir' },
   { name: 'Nadir', status: 'upcoming', date: 'Día 7-14' },
-  { name: 'Ciclo 2', status: 'upcoming', date: 'Día 21' },
   { name: 'PET', status: 'upcoming', date: 'Post C2-4' },
 ];
 
 const quickStats = [
-  { label: 'LDH', value: '2,010', unit: 'U/L', trend: 'critical', normal: '< 225' },
-  { label: 'Plaquetas', value: '64,000', unit: '/µL', trend: 'critical', normal: '150-400K' },
-  { label: 'Hemoglobina', value: '8.1', unit: 'g/dL', trend: 'warn', normal: '13-17' },
-  { label: 'SUVmax', value: '26.7', unit: '', trend: 'critical', normal: '< 2' },
+  { label: 'LDH', value: '1,680', unit: 'U/L', trend: 'critical', normal: '< 225', prev: '1,850 (Abr 10)' },
+  { label: 'Plaquetas', value: '85,000', unit: '/µL', trend: 'critical', normal: '150-400K', prev: '72,000 (Abr 10)' },
+  { label: 'Hemoglobina', value: '9.2', unit: 'g/dL', trend: 'warn', normal: '13-17', prev: '8.8 (Abr 10)' },
+  { label: 'Creatinina', value: '1.2', unit: 'mg/dL', trend: 'safe', normal: '0.7-1.3', prev: '1.5 (Abr 10)' },
 ];
 
 const trendColors = {
@@ -100,6 +100,9 @@ export default function Dashboard() {
               <p className="text-xs font-medium opacity-70 mb-1">{stat.label}</p>
               <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
               <p className="text-[10px] opacity-60 mt-0.5">Normal: {stat.normal}</p>
+              {stat.prev && (
+                <p className="text-[10px] opacity-50 mt-0.5">Anterior: {stat.prev}</p>
+              )}
             </div>
           ))}
         </div>
@@ -151,6 +154,35 @@ export default function Dashboard() {
           gradient="from-green-500 to-emerald-600"
         />
       </div>
+
+      {/* UCI Status */}
+      <Card className="!bg-gradient-to-br !from-amber-50/60 !to-orange-50/40 !border-amber-200">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-none">
+            <Shield className="w-5 h-5 text-amber-700" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-amber-900 mb-1">UCI Hemato-Oncología — Abril 18</h3>
+            <p className="text-sm text-amber-800 leading-relaxed">
+              Roro fue admitido a la UCI de hemato-oncología. 5 medicamentos autorizados: 
+              <strong> Vincristina, Dexametasona, Ondansetrón, Piperacilina, Rosuvastatina</strong>. 
+              Monoterapia antineoplásica de alta toxicidad autorizada por EPS. Protocolo exacto pendiente.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Infection watch */}
+      <Card tone="warn" className="!border-amber-300">
+        <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+          <Thermometer className="w-4 h-4" />
+          🔬 Vigilancia de infección activa
+        </h3>
+        <p className="text-sm text-amber-800 leading-relaxed">
+          Roro está recibiendo <strong>Piperacilina (antibiótico IV)</strong> — hay riesgo o sospecha de infección. 
+          Vigilar: fiebre, escalofríos, cambios en frecuencia cardíaca, tos nueva, cambio en drenaje del tubo de tórax.
+        </p>
+      </Card>
 
       {/* Emergency Alerts */}
       <Card tone="critical" className="!border-rose-300">

@@ -14,7 +14,7 @@ const statusConfig = {
 };
 
 export default function Inventory() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [data, setData] = useState({});
   const [search, setSearch] = useState('');
   const [assignInput, setAssignInput] = useState({});
@@ -175,17 +175,19 @@ export default function Inventory() {
                   <div key={item} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-stone-50 transition-colors group">
                     <button
                       onClick={() => {
+                        if (!isAdmin) return;
                         const cycle = ['pending', 'have', 'buying', 'missing'];
                         const next = cycle[(cycle.indexOf(status) + 1) % cycle.length];
                         setStatus(key, cat.category, next);
                       }}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border transition-colors ${cfg.color}`}
-                      title="Clic para cambiar estado"
+                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border transition-colors ${cfg.color} ${!isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
+                      title={isAdmin ? "Clic para cambiar estado" : cfg.label}
                     >
                       <StatusIcon className="w-3 h-3" />
                       {cfg.label}
                     </button>
                     <span className="text-sm text-stone-800 flex-1">{item}</span>
+                    {isAdmin && (
                     <input
                       type="text"
                       placeholder="¿Quién?"
@@ -194,6 +196,7 @@ export default function Inventory() {
                       onBlur={e => { setAssigned(key, cat.category, e.target.value); setAssignInput({ ...assignInput, [key]: undefined }); }}
                       className="w-24 text-xs px-2 py-1 border border-stone-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-sky-200 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                     />
+                    )}
                   </div>
                 );
               })}

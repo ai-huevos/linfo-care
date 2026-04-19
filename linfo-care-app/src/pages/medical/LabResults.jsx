@@ -12,23 +12,31 @@ function Sparkline({ points, normalMin, normalMax, color = '#0ea5e9', width = 20
   const w = width - padding * 2;
   const h = height - padding * 2;
 
-  const allVals = [...points.map(p => p.value), normalMin, normalMax].filter(Boolean);
+  // Supabase returns NUMERIC as strings; coerce and drop NaN without dropping 0.
+  const num = (v) => (v == null ? null : Number(v));
+  const valid = (v) => v != null && Number.isFinite(v);
+  const normMin = num(normalMin);
+  const normMax = num(normalMax);
+  const values = points.map((p) => num(p.value)).filter(valid);
+  if (!values.length) return null;
+
+  const allVals = [...values, normMin, normMax].filter(valid);
   const min = Math.min(...allVals) * 0.9;
   const max = Math.max(...allVals) * 1.1;
   const range = max - min || 1;
 
   const toX = (i) => padding + (i / Math.max(points.length - 1, 1)) * w;
-  const toY = (v) => padding + h - ((v - min) / range) * h;
+  const toY = (v) => padding + h - ((num(v) - min) / range) * h;
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i)},${toY(p.value)}`).join(' ');
 
   return (
     <svg width={width} height={height} className="overflow-visible">
       {/* Normal range band */}
-      {normalMin != null && normalMax != null && (
+      {valid(normMin) && valid(normMax) && (
         <rect
-          x={padding} y={toY(normalMax)}
-          width={w} height={Math.abs(toY(normalMin) - toY(normalMax))}
+          x={padding} y={toY(normMax)}
+          width={w} height={Math.abs(toY(normMin) - toY(normMax))}
           fill="#10b981" opacity={0.08} rx={3}
         />
       )}
@@ -36,7 +44,8 @@ function Sparkline({ points, normalMin, normalMax, color = '#0ea5e9', width = 20
       <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
       {/* Points */}
       {points.map((p, i) => {
-        const isAbnormal = (normalMin != null && p.value < normalMin) || (normalMax != null && p.value > normalMax);
+        const pv = num(p.value);
+        const isAbnormal = (valid(normMin) && pv < normMin) || (valid(normMax) && pv > normMax);
         return (
           <circle
             key={i}
@@ -58,7 +67,7 @@ function TrendIcon({ trend }) {
 }
 
 export default function LabResults() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -126,6 +135,7 @@ export default function LabResults() {
       </SectionTitle>
 
       {/* Add result */}
+      {isAdmin && (
       <div className="flex justify-end">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -135,6 +145,7 @@ export default function LabResults() {
           Agregar resultado
         </button>
       </div>
+      )}
 
       {showAddForm && (
         <Card>

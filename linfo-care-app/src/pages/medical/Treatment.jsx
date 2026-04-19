@@ -1,59 +1,56 @@
 import React, { useState } from 'react';
-import { Shield, Calendar, AlertTriangle, CheckCircle2, Clock, ChevronDown, Activity, Droplets, Thermometer } from 'lucide-react';
+import { Shield, Calendar, AlertTriangle, CheckCircle2, Clock, ChevronDown, Activity, Droplets, Thermometer, AlertCircle, Info } from 'lucide-react';
 import { SectionTitle, Card, Pill, TimelineStep } from '../../components/ui';
+
+const confirmedMeds = [
+  { name: 'Vincristina', type: 'Solución inyectable', notes: 'Agente antineoplásico — impide la división celular. Parte del esquema autorizado. Vigilar hormigueo en manos/pies (neuropatía periférica).', category: 'quimio' },
+  { name: 'Dexametasona Fosfato', type: '8mg/2mL Sol Iny (Vitalis)', notes: 'Corticosteroide autorizado el 17/04. Se usa como pre-medicación antes de quimioterapia, antiinflamatorio y para reducir edema. Puede elevar glucosa y dar apetito. Solicitud #342869477.', category: 'quimio' },
+  { name: 'Ondansetrón', type: 'Anti-emético', notes: 'Previene náusea y vómito asociados a quimioterapia. Puede causar estreñimiento — asegurar hidratación y movicol si es necesario.', category: 'soporte' },
+  { name: 'Piperacilina', type: 'Antibiótico IV', notes: 'Antibiótico de amplio espectro (probablemente Piperacilina/Tazobactam). Indica cobertura para riesgo de infección en contexto de UCI.', category: 'soporte' },
+  { name: 'Rosuvastatina', type: 'Estatina', notes: 'Control de lípidos y efecto antiinflamatorio. Medicamento crónico que Roro probablemente tomaba antes del ingreso.', category: 'soporte' },
+];
 
 const phases = [
   {
-    id: 'prefase',
-    name: 'Pre-fase',
+    id: 'uci',
+    name: 'UCI Hemato-Oncología',
     status: 'active',
-    dateRange: 'Abril 19 – 25, 2026',
-    goal: 'Reducir suavemente la carga tumoral antes de la quimioterapia completa. Proteger riñones del síndrome de lisis tumoral.',
-    meds: [
-      { name: 'Prednisona', dose: '100 mg/día × 5-7 días', notes: 'Esteroide. Da hambre y energía. Puede subir el azúcar. Tomar con comida.' },
-      { name: 'Alopurinol', dose: '300 mg/día', notes: 'Protege riñones del ácido úrico que suelta el tumor al destruirse.' },
-      { name: 'Hidratación IV', dose: '2-3 L/día', notes: 'Suero para mantener los riñones lavando. Vigilar que orine bien.' },
-    ],
-    labsToWatch: ['Ácido úrico', 'Potasio', 'Fósforo', 'Calcio', 'Creatinina', 'LDH'],
+    dateRange: 'Abril 18, 2026 – presente',
+    goal: 'Estabilización clínica y monitoreo estrecho. Roro fue trasladado a la UCI de hemato-oncología para manejo especializado mientras el equipo define el protocolo de tratamiento.',
+    meds: confirmedMeds,
+    labsToWatch: ['Hemograma completo', 'LDH', 'Función renal (creatinina, BUN)', 'Electrolitos', 'Función hepática', 'PCR / Procalcitonina'],
     redFlags: [
-      'Potasio > 6.0 → riesgo arritmia cardíaca → URGENTE',
-      'Ácido úrico > 8.0 → agregar rasburicasa',
-      'Oliguria (no orina) → alertar nefrología',
+      'Fiebre ≥ 38°C → puede ser neutropenia febril → avisar INMEDIATO al equipo',
+      'Dificultad respiratoria que empeora → puede ser progresión del derrame pleural',
+      'Confusión nueva / desorientación → riesgo de delirium → avisar enfermería',
+      'Sangrado activo o moretones nuevos → plaquetas pueden estar muy bajas',
+      'Dolor abdominal severo → riesgo de complicación de la masa duodenal',
     ],
   },
   {
-    id: 'ciclo1',
-    name: 'Ciclo 1 — R-CHOP / R-mini-CHOP',
+    id: 'protocolo',
+    name: 'Definición del protocolo',
     status: 'upcoming',
-    dateRange: 'Aprox. Abril 26 – Mayo 16, 2026',
-    goal: 'Primera ronda de quimioterapia combinada. Se decide si dosis completa o reducida según tolerancia de pre-fase.',
-    meds: [
-      { name: 'Rituximab (R)', dose: '375 mg/m²', notes: 'Infusión lenta (4-6h primera vez). Puede causar fiebre/escalofríos. Pre-medicar con acetaminofén + anti-histamínico.' },
-      { name: 'Ciclofosfamida (C)', dose: '750 mg/m² (o 400 para mini)', notes: 'Hidratación obligatoria. Puede causar náusea.' },
-      { name: 'Doxorrubicina (H)', dose: '50 mg/m² (o 25 para mini)', notes: 'La infusión es ROJA — no es sangre, es el color del medicamento. Puede afectar corazón.' },
-      { name: 'Vincristina (O)', dose: '1.4 mg/m² (max 2mg)', notes: 'Puede causar hormigueo en manos/pies (neuropatía). Avisar si aparece.' },
-      { name: 'Prednisona (P)', dose: '100 mg/día × 5 días', notes: 'Pastillas los días 1-5. Da energía temporal.' },
-    ],
-    labsToWatch: ['Hemograma día 7 y 14', 'Función renal', 'Función hepática'],
+    dateRange: 'Pendiente — equipo de hemato-oncología',
+    goal: 'El equipo de hemato-oncología evaluará el estado clínico actual de Roro para definir el régimen quimioterapéutico. Las opciones incluyen R-CHOP, R-mini-CHOP, u otros esquemas según tolerancia y condición.',
+    meds: [],
+    labsToWatch: ['Ecocardiograma (función cardíaca pre-quimio)', 'Biopsia de médula ósea (si no se ha hecho)', 'Perfil viral (VIH, Hepatitis B/C)'],
     redFlags: [
-      'Fiebre ≥ 38°C durante nadir (día 7-14) = NEUTROPENIA FEBRIL → urgencias INMEDIATO',
-      'Sangrado activo inexplicado → plaquetas urgentes',
-      'Dificultad para respirar → puede ser cardiotoxicidad o infección pulmonar',
-      'No orinar > 6 horas → puede ser lisis tumoral → alertar',
+      'Si la función cardíaca es baja → puede limitar uso de doxorrubicina',
+      'Si hay infección activa → debe resolverse antes de iniciar quimioterapia',
     ],
   },
   {
-    id: 'ciclo2_6',
-    name: 'Ciclos 2 – 6',
+    id: 'quimio',
+    name: 'Inicio de quimioterapia',
     status: 'planned',
-    dateRange: 'Mayo – Septiembre 2026',
-    goal: 'Se repite cada 21 días si labs lo permiten. PET-CT intermedio después del ciclo 2 o 4 para evaluar respuesta.',
-    meds: [{ name: 'Mismo esquema R-CHOP', dose: 'Ajustado según tolerancia', notes: 'Rituximab más rápido a partir del ciclo 2. Se ajustan dosis si hay toxicidad.' }],
-    labsToWatch: ['Hemograma pre-ciclo', 'Ecocardiograma cada 2-3 ciclos', 'PET-CT intermedio'],
+    dateRange: 'Por definir',
+    goal: 'Una vez confirmado el protocolo, se inicia el primer ciclo de quimioterapia. El equipo definirá dosis, frecuencia y esquema de monitoreo específico.',
+    meds: [],
+    labsToWatch: ['Se definirán según el protocolo elegido'],
     redFlags: [
-      'Si neutrófilos < 1000 → diferir ciclo hasta recuperación',
-      'Fracción de eyección < 50% → suspender doxorrubicina',
-      'Neuropatía severa → reducir/suspender vincristina',
+      'Fiebre durante nadir (día 7-14 post-quimio) = EMERGENCIA',
+      'Los protocolos específicos de vigilancia se definirán con el equipo',
     ],
   },
 ];
@@ -65,31 +62,58 @@ const statusColors = {
   completed: { bg: 'bg-stone-50', text: 'text-stone-500', border: 'border-stone-200', label: 'Completada', dot: 'bg-stone-300' },
 };
 
+const catColors = {
+  quimio: 'border-l-violet-500 bg-violet-50/30',
+  soporte: 'border-l-emerald-500 bg-emerald-50/30',
+};
+
 export default function Treatment() {
-  const [openPhase, setOpenPhase] = useState('prefase');
+  const [openPhase, setOpenPhase] = useState('uci');
+  const [showReference, setShowReference] = useState(false);
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <SectionTitle subtitle="El plan de tratamiento de Roro paso a paso. Cada fase tiene sus medicamentos, labs a vigilar, y señales de alarma.">
+      <SectionTitle subtitle="El estado actual del tratamiento de Roro. Solo se muestra información confirmada por el equipo médico.">
         Plan de tratamiento
       </SectionTitle>
 
-      {/* Overview */}
-      <Card className="!bg-gradient-to-br !from-sky-50/60 !to-indigo-50/40 !border-sky-200">
+      {/* Protocol status banner */}
+      <Card tone="warn" className="!border-amber-300">
         <div className="flex items-start gap-3">
-          <Shield className="w-5 h-5 text-sky-600 flex-none mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-none mt-0.5" />
           <div>
-            <h3 className="text-sm font-semibold text-stone-900 mb-1">Protocolo: R-CHOP o R-mini-CHOP</h3>
-            <p className="text-sm text-stone-700 leading-relaxed">
-              6 ciclos de 21 días cada uno. Duración total estimada: <strong>4-5 meses</strong>. 
-              Se evalúa respuesta con PET-CT intermedio. Tasa de remisión completa en DLBCL: <strong>60-70%</strong> (incluso a los 78 años con mini-CHOP).
+            <h3 className="text-sm font-bold text-amber-900 mb-1">Protocolo de tratamiento: PENDIENTE DE CONFIRMACIÓN</h3>
+            <p className="text-sm text-amber-800 leading-relaxed">
+              El equipo de hemato-oncología aún no ha definido el régimen completo de quimioterapia. 
+              Roro fue admitido a la <strong>UCI de Hemato-Oncología</strong> el 18 de abril. 
+              EPS Sanitas autorizó <strong>Monoterapia Antineoplásica de Alta Toxicidad</strong> (solicitud #342874411, vigencia hasta Oct 2026). 
+              Actualmente recibe <strong>5 medicamentos autorizados</strong> por Clínica del Country.
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
-              <Pill tone="safe">Potencialmente curable</Pill>
-              <Pill tone="info">6 ciclos / 21 días</Pill>
-              <Pill tone="warn">Requiere monitoreo estrecho</Pill>
+              <Pill tone="warn">Monoterapia autorizada</Pill>
+              <Pill tone="info">UCI Hemato-Oncología</Pill>
+              <Pill tone="default">5 medicamentos activos</Pill>
             </div>
           </div>
+        </div>
+      </Card>
+
+      {/* Confirmed medications summary */}
+      <Card>
+        <h3 className="text-sm font-semibold text-stone-900 mb-3 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          Medicamentos autorizados (confirmados)
+        </h3>
+        <div className="space-y-2">
+          {confirmedMeds.map(med => (
+            <div key={med.name} className={`border-l-2 ${catColors[med.category]} rounded-r-lg p-3`}>
+              <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                <p className="text-sm font-semibold text-stone-900">{med.name}</p>
+                <p className="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded">{med.type}</p>
+              </div>
+              <p className="text-xs text-stone-600 leading-relaxed">{med.notes}</p>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -101,7 +125,6 @@ export default function Treatment() {
 
           return (
             <Card key={phase.id} className={isOpen ? `!border-l-4 !border-l-sky-500` : ''}>
-              {/* Header */}
               <button
                 onClick={() => setOpenPhase(isOpen ? null : phase.id)}
                 className="w-full flex items-center gap-3 text-left"
@@ -121,34 +144,32 @@ export default function Treatment() {
                 <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Expanded content */}
               {isOpen && (
                 <div className="mt-4 space-y-4 animate-fade-in">
-                  {/* Goal */}
                   <div className="bg-stone-50 border border-stone-200 rounded-lg p-3">
                     <p className="text-xs font-medium text-stone-500 uppercase mb-1">Objetivo</p>
                     <p className="text-sm text-stone-700 leading-relaxed">{phase.goal}</p>
                   </div>
 
-                  {/* Medications */}
-                  <div>
-                    <p className="text-xs font-semibold text-stone-500 uppercase mb-2 flex items-center gap-1.5">
-                      <Droplets className="w-3 h-3" /> Medicamentos
-                    </p>
-                    <div className="space-y-2">
-                      {phase.meds.map(med => (
-                        <div key={med.name} className="border border-stone-200 rounded-lg p-3">
-                          <div className="flex items-baseline justify-between gap-2 mb-1">
-                            <p className="text-sm font-semibold text-stone-900">{med.name}</p>
-                            <p className="text-xs text-sky-700 font-medium bg-sky-50 px-2 py-0.5 rounded">{med.dose}</p>
+                  {phase.meds.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-stone-500 uppercase mb-2 flex items-center gap-1.5">
+                        <Droplets className="w-3 h-3" /> Medicamentos
+                      </p>
+                      <div className="space-y-2">
+                        {phase.meds.map(med => (
+                          <div key={med.name} className="border border-stone-200 rounded-lg p-3">
+                            <div className="flex items-baseline justify-between gap-2 mb-1">
+                              <p className="text-sm font-semibold text-stone-900">{med.name}</p>
+                              <p className="text-xs text-sky-700 font-medium bg-sky-50 px-2 py-0.5 rounded">{med.type}</p>
+                            </div>
+                            <p className="text-xs text-stone-600 leading-relaxed">{med.notes}</p>
                           </div>
-                          <p className="text-xs text-stone-600 leading-relaxed">{med.notes}</p>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Labs to watch */}
                   <div>
                     <p className="text-xs font-semibold text-stone-500 uppercase mb-2 flex items-center gap-1.5">
                       <Activity className="w-3 h-3" /> Labs a vigilar
@@ -160,7 +181,6 @@ export default function Treatment() {
                     </div>
                   </div>
 
-                  {/* Red flags */}
                   <Card tone="critical">
                     <p className="text-xs font-semibold text-rose-800 uppercase mb-2 flex items-center gap-1.5">
                       <AlertTriangle className="w-3 h-3" /> Señales de alarma
@@ -185,24 +205,58 @@ export default function Treatment() {
       <Card>
         <h3 className="text-sm font-semibold text-stone-900 mb-3 flex items-center gap-2">
           <Calendar className="w-4 h-4 text-sky-600" />
-          Fechas clave
+          Línea de tiempo real
         </h3>
         <div className="space-y-1">
-          <TimelineStep num={1} title="Pre-fase con prednisona" detail="Iniciar preparación renal y reducción tumoral suave." days="Abril 19" />
-          <TimelineStep num={2} title="Ecocardiograma basal" detail="Medir función cardíaca antes de doxorrubicina." days="Abril 21-23" />
-          <TimelineStep num={3} title="Día 1 — Ciclo 1 R-CHOP" detail="Primera infusión completa. Monitoreo 24-48h mínimo." days="Abril 26 (est.)" />
-          <TimelineStep num={4} title="Nadir (punto más bajo de defensas)" detail="Mayor riesgo de infección. Fiebre = urgencias." days="Mayo 3-10" />
-          <TimelineStep num={5} title="Labs pre-Ciclo 2" detail="Hemograma, función renal, hepática." days="Mayo 16" />
-          <TimelineStep num={6} title="PET-CT intermedio" detail="Evaluar si el tumor está respondiendo. Decisión crítica." days="~Junio" last />
+          <TimelineStep num={1} title="Ingreso UCI" detail="Roro ingresó por cuadro clínico severo. Estabilización inicial." days="Abril 6" />
+          <TimelineStep num={2} title="Diagnóstico confirmado" detail="DLBCL Estadio IV — confirmado por biopsia, PET-CT, mielograma." days="Abril 7-13" />
+          <TimelineStep num={3} title="Piso Oncología" detail="Traslado de UCI a piso para continuar manejo." days="Abril 14" />
+          <TimelineStep num={4} title="UCI Hemato-Oncología" detail="Admitido a UCI especializada de hemato-oncología." days="Abril 18" />
+          <TimelineStep num={5} title="Definición de protocolo" detail="El equipo decide el esquema de quimioterapia." days="Pendiente" />
+          <TimelineStep num={6} title="Inicio quimioterapia" detail="Primer ciclo del régimen definido." days="Por confirmar" last />
         </div>
+      </Card>
+
+      {/* R-CHOP Reference (collapsed) */}
+      <Card tone="muted">
+        <button
+          onClick={() => setShowReference(!showReference)}
+          className="w-full flex items-center gap-2 text-left"
+        >
+          <Info className="w-4 h-4 text-stone-400 flex-none" />
+          <span className="text-sm font-medium text-stone-600 flex-1">Material de referencia: Protocolo R-CHOP (NO confirmado)</span>
+          <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${showReference ? 'rotate-180' : ''}`} />
+        </button>
+        {showReference && (
+          <div className="mt-3 space-y-3 animate-fade-in border-t border-stone-200 pt-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800">
+                <strong>⚠️ IMPORTANTE:</strong> La siguiente información es material de referencia sobre el protocolo R-CHOP. 
+                NO ha sido confirmado como el tratamiento de Roro. Solo se incluye como contexto educativo.
+              </p>
+            </div>
+            <p className="text-sm text-stone-600 leading-relaxed">
+              <strong>R-CHOP</strong> es el régimen estándar para DLBCL. Son 5 medicamentos: Rituximab (R), 
+              Ciclofosfamida (C), Doxorrubicina (H), Vincristina (O), Prednisona (P). 
+              En pacientes mayores de 75 años se puede usar <strong>R-mini-CHOP</strong> con dosis reducidas.
+            </p>
+            <p className="text-xs text-stone-500">
+              Nota: Vincristina (ya autorizada para Roro) es la "O" del esquema R-CHOP. 
+              Esto podría indicar que el equipo se está moviendo hacia alguna variante de este protocolo, 
+              pero no se puede confirmar hasta que oncología lo comunique.
+            </p>
+          </div>
+        )}
       </Card>
 
       {/* Family tip */}
       <Card tone="info">
         <p className="text-sm text-sky-900 leading-relaxed">
-          <span className="font-medium">💡 Para la familia:</span> Cada ciclo tiene un patrón predecible. 
-          Los días 1-5 son de tratamiento activo, los días 7-14 son de mayor riesgo (nadir), 
-          y los días 15-21 son de recuperación. Organicen los turnos para tener más cobertura durante el nadir.
+          <span className="font-medium">💡 Para la familia:</span> Mientras Roro está en la UCI de hemato-oncología, 
+          lo más importante es: <strong>(1)</strong> mantener registro de todo lo que dice el equipo médico, 
+          <strong>(2)</strong> preguntar cuándo se define el protocolo de quimioterapia, y 
+          <strong>(3)</strong> vigilar las señales de alarma listadas arriba. 
+          Cualquier fiebre ≥38°C es emergencia.
         </p>
       </Card>
     </div>

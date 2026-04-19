@@ -1,2 +1,12 @@
 .vercel
 .env*.local
+
+# Generated clinical-data artifacts (auto-extracted from Research/ PDFs + portal)
+Research/pdf-export.json
+Research/pdf-raw-text.json
+Research/imaging-export.json
+Research/portal-export.json
+Research/consolidated-labs.json
+Research/sync-labs.sql
+Research/cleanup-bogus-labs.sql
+Research/portal-pdfs/

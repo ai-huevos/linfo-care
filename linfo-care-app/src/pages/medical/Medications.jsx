@@ -5,17 +5,14 @@ import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import { getPatientId } from '../../lib/useSupabase';
 
-// Pre-loaded medications for Roro based on clinical data
+// Confirmed medications — only drugs authorized by Clínica del Country (Administradora Country SAS)
+// Data extracted from EPS Sanitas authorization documents dated 16-17/04/2026
 const defaultMeds = [
-  { name: 'Prednisona', dose: '100 mg/día', frequency: '1 vez al día con desayuno', category: 'quimio', status: 'active', notes: 'Pre-fase y días 1-5 de cada ciclo. Puede elevar glucosa. Da apetito y energía.', sideEffects: 'Insomnio, hambre excesiva, hiperglucemia, irritabilidad' },
-  { name: 'Alopurinol', dose: '300 mg/día', frequency: '1 vez al día', category: 'soporte', status: 'active', notes: 'Protege riñones del síndrome de lisis tumoral. Tomar con abundante agua.', sideEffects: 'Rash (suspender si aparece), náusea leve' },
-  { name: 'Omeprazol', dose: '20 mg/día', frequency: 'En ayunas, 30 min antes del desayuno', category: 'soporte', status: 'active', notes: 'Protege estómago de la prednisona y el estrés.', sideEffects: 'Generalmente bien tolerado' },
-  { name: 'Ondansetrón', dose: '8 mg c/8h PRN', frequency: 'Solo si náusea', category: 'soporte', status: 'active', notes: 'Anti-náusea para los días de quimio. Puede causar estreñimiento — combinar con movicol.', sideEffects: 'Estreñimiento, dolor de cabeza leve' },
-  { name: 'Acetaminofén', dose: '500 mg c/6h PRN', frequency: 'Solo si dolor o fiebre', category: 'soporte', status: 'active', notes: 'Para dolor y fiebre. NO usar ibuprofeno (afecta plaquetas). Máximo 2g/día por hígado.', sideEffects: 'Daño hepático si se excede la dosis' },
-  { name: 'Rituximab', dose: '375 mg/m²', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Anticuerpo monoclonal. Pre-medicar con acetaminofén + difenhidramina. Primera infusión lenta (4-6h).', sideEffects: 'Reacción infusional: fiebre, escalofríos, rash. Reducir velocidad si aparecen.' },
-  { name: 'Ciclofosfamida', dose: '750 mg/m² (o 400 mini)', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Quimioterapia. Hidratación obligatoria. Puede causar cistitis hemorrágica — mucha agua.', sideEffects: 'Náusea, caída de pelo, cistitis' },
-  { name: 'Doxorrubicina', dose: '50 mg/m² (o 25 mini)', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Antibiótico antitumoral. Color ROJO — orina puede ser rosa 24-48h (normal). Riesgo cardíaco acumulativo.', sideEffects: 'Cardiotoxicidad, náusea, alopecia, mucositis' },
-  { name: 'Vincristina', dose: '1.4 mg/m² (max 2mg)', frequency: 'Día 1 de cada ciclo', category: 'quimio', status: 'pending', notes: 'Antitumoral. Vigilar hormigueo en manos/pies (neuropatía periférica). Avisar si el estreñimiento es severo.', sideEffects: 'Neuropatía, estreñimiento severo, dolor mandibular' },
+  { name: 'Vincristina', dose: 'Por confirmar (solución inyectable)', frequency: 'Según indicación médica', category: 'quimio', status: 'active', notes: 'Agente antineoplásico autorizado. Impide la división celular tumoral. Es la "O" (Oncovin) del esquema R-CHOP — su autorización puede indicar que el equipo se mueve hacia ese protocolo.', sideEffects: 'Neuropatía periférica (hormigueo manos/pies), estreñimiento severo, dolor mandibular. Avisar si aparece cualquiera.' },
+  { name: 'Dexametasona Fosfato', dose: '8mg/2mL (0.4%) Sol Iny', frequency: 'Según indicación médica', category: 'quimio', status: 'active', notes: 'Corticosteroide autorizado el 17/04 (Vitalis S.A.). Se usa como pre-medicación antes de quimioterapia, antiinflamatorio y para reducir edema cerebral/tumoral. Solicitud #342869477, vigencia hasta 16/05/2026.', sideEffects: 'Elevación de glucosa, aumento de apetito, insomnio, irritabilidad. Vigilar azúcar en sangre.' },
+  { name: 'Ondansetrón', dose: 'Por confirmar', frequency: 'Según indicación médica', category: 'soporte', status: 'active', notes: 'Anti-emético (previene náusea y vómito). Se usa para contrarrestar los efectos gastrointestinales de la quimioterapia y otros medicamentos.', sideEffects: 'Estreñimiento, dolor de cabeza leve. Asegurar hidratación.' },
+  { name: 'Piperacilina', dose: 'Por confirmar (IV)', frequency: 'Según indicación médica', category: 'soporte', status: 'active', notes: 'Antibiótico de amplio espectro IV (probablemente Piperacilina/Tazobactam). Cobertura antibiótica para riesgo de infección en contexto de UCI e inmunosupresión por la enfermedad.', sideEffects: 'Diarrea, reacción alérgica (rash, fiebre). Avisar si aparece rash o dificultad respiratoria.' },
+  { name: 'Rosuvastatina', dose: 'Por confirmar', frequency: 'Según indicación médica', category: 'otro', status: 'active', notes: 'Estatina para control de lípidos y efecto antiinflamatorio. Medicamento que Roro probablemente tomaba antes del ingreso y se mantiene durante la hospitalización.', sideEffects: 'Dolor muscular (mialgia), elevación de enzimas hepáticas. Generalmente bien tolerado.' },
 ];
 
 const categoryConfig = {
@@ -33,7 +30,7 @@ const statusConfig = {
 };
 
 export default function Medications() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -134,13 +131,15 @@ export default function Medications() {
           <Wifi className="w-3 h-3" />
           <span>Sincronizado — cambios visibles para toda la familia</span>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar medicamento
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:from-sky-700 hover:to-indigo-700 shadow-md shadow-sky-600/20 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Agregar medicamento
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -257,6 +256,7 @@ export default function Medications() {
                           <p className="text-xs text-amber-800 leading-relaxed">{med.side_effects}</p>
                         </div>
                       )}
+                      {isAdmin && (
                       <div className="flex gap-1.5 pt-1">
                         {['active', 'pending', 'paused', 'stopped'].map(s => (
                           <button
@@ -271,6 +271,7 @@ export default function Medications() {
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
+                      )}
                     </div>
                   )}
                 </div>
