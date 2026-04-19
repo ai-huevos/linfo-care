@@ -4,6 +4,7 @@ import { SectionTitle, Card, Pill, TimelineStep } from '../../components/ui';
 
 const confirmedMeds = [
   { name: 'Vincristina', type: 'Solución inyectable', notes: 'Agente antineoplásico — impide la división celular. Parte del esquema autorizado. Vigilar hormigueo en manos/pies (neuropatía periférica).', category: 'quimio' },
+  { name: 'Dexametasona Fosfato', type: '8mg/2mL Sol Iny (Vitalis)', notes: 'Corticosteroide autorizado el 17/04. Se usa como pre-medicación antes de quimioterapia, antiinflamatorio y para reducir edema. Puede elevar glucosa y dar apetito. Solicitud #342869477.', category: 'quimio' },
   { name: 'Ondansetrón', type: 'Anti-emético', notes: 'Previene náusea y vómito asociados a quimioterapia. Puede causar estreñimiento — asegurar hidratación y movicol si es necesario.', category: 'soporte' },
   { name: 'Piperacilina', type: 'Antibiótico IV', notes: 'Antibiótico de amplio espectro (probablemente Piperacilina/Tazobactam). Indica cobertura para riesgo de infección en contexto de UCI.', category: 'soporte' },
   { name: 'Rosuvastatina', type: 'Estatina', notes: 'Control de lípidos y efecto antiinflamatorio. Medicamento crónico que Roro probablemente tomaba antes del ingreso.', category: 'soporte' },
@@ -85,12 +86,13 @@ export default function Treatment() {
             <p className="text-sm text-amber-800 leading-relaxed">
               El equipo de hemato-oncología aún no ha definido el régimen completo de quimioterapia. 
               Roro fue admitido a la <strong>UCI de Hemato-Oncología</strong> el 18 de abril. 
-              Actualmente recibe <strong>4 medicamentos autorizados</strong> (ver abajo).
+              EPS Sanitas autorizó <strong>Monoterapia Antineoplásica de Alta Toxicidad</strong> (solicitud #342874411, vigencia hasta Oct 2026). 
+              Actualmente recibe <strong>5 medicamentos autorizados</strong> por Clínica del Country.
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
-              <Pill tone="warn">Protocolo por confirmar</Pill>
+              <Pill tone="warn">Monoterapia autorizada</Pill>
               <Pill tone="info">UCI Hemato-Oncología</Pill>
-              <Pill tone="default">4 medicamentos activos</Pill>
+              <Pill tone="default">5 medicamentos activos</Pill>
             </div>
           </div>
         </div>

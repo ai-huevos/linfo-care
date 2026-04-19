@@ -161,9 +161,9 @@ export default function Dashboard() {
           <div>
             <h3 className="text-sm font-bold text-amber-900 mb-1">UCI Hemato-Oncología — Abril 18</h3>
             <p className="text-sm text-amber-800 leading-relaxed">
-              Roro fue admitido a la UCI de hemato-oncología. 4 medicamentos autorizados: 
-              <strong> Vincristina, Ondansetrón, Piperacilina, Rosuvastatina</strong>. 
-              Protocolo de quimioterapia pendiente de confirmación.
+              Roro fue admitido a la UCI de hemato-oncología. 5 medicamentos autorizados: 
+              <strong> Vincristina, Dexametasona, Ondansetrón, Piperacilina, Rosuvastatina</strong>. 
+              Monoterapia antineoplásica de alta toxicidad autorizada por EPS. Protocolo exacto pendiente.
             </p>
           </div>
         </div>

@@ -5,10 +5,11 @@ import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import { getPatientId } from '../../lib/useSupabase';
 
-// Confirmed medications — only drugs authorized by Clínica del Country
-// Doses will be updated once authorization JPG images are processed
+// Confirmed medications — only drugs authorized by Clínica del Country (Administradora Country SAS)
+// Data extracted from EPS Sanitas authorization documents dated 16-17/04/2026
 const defaultMeds = [
   { name: 'Vincristina', dose: 'Por confirmar (solución inyectable)', frequency: 'Según indicación médica', category: 'quimio', status: 'active', notes: 'Agente antineoplásico autorizado. Impide la división celular tumoral. Es la "O" (Oncovin) del esquema R-CHOP — su autorización puede indicar que el equipo se mueve hacia ese protocolo.', sideEffects: 'Neuropatía periférica (hormigueo manos/pies), estreñimiento severo, dolor mandibular. Avisar si aparece cualquiera.' },
+  { name: 'Dexametasona Fosfato', dose: '8mg/2mL (0.4%) Sol Iny', frequency: 'Según indicación médica', category: 'quimio', status: 'active', notes: 'Corticosteroide autorizado el 17/04 (Vitalis S.A.). Se usa como pre-medicación antes de quimioterapia, antiinflamatorio y para reducir edema cerebral/tumoral. Solicitud #342869477, vigencia hasta 16/05/2026.', sideEffects: 'Elevación de glucosa, aumento de apetito, insomnio, irritabilidad. Vigilar azúcar en sangre.' },
   { name: 'Ondansetrón', dose: 'Por confirmar', frequency: 'Según indicación médica', category: 'soporte', status: 'active', notes: 'Anti-emético (previene náusea y vómito). Se usa para contrarrestar los efectos gastrointestinales de la quimioterapia y otros medicamentos.', sideEffects: 'Estreñimiento, dolor de cabeza leve. Asegurar hidratación.' },
   { name: 'Piperacilina', dose: 'Por confirmar (IV)', frequency: 'Según indicación médica', category: 'soporte', status: 'active', notes: 'Antibiótico de amplio espectro IV (probablemente Piperacilina/Tazobactam). Cobertura antibiótica para riesgo de infección en contexto de UCI e inmunosupresión por la enfermedad.', sideEffects: 'Diarrea, reacción alérgica (rash, fiebre). Avisar si aparece rash o dificultad respiratoria.' },
   { name: 'Rosuvastatina', dose: 'Por confirmar', frequency: 'Según indicación médica', category: 'otro', status: 'active', notes: 'Estatina para control de lípidos y efecto antiinflamatorio. Medicamento que Roro probablemente tomaba antes del ingreso y se mantiene durante la hospitalización.', sideEffects: 'Dolor muscular (mialgia), elevación de enzimas hepáticas. Generalmente bien tolerado.' },
