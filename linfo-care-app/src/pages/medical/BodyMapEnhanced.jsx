@@ -23,64 +23,66 @@ import {
 //   • Mielograma del 14/04/2026, informe 17/04/2026 (Research/Patologia Mielograma.pdf)
 //   • Biopsia duodenal 08/04/2026 (Research/Patologia Estomago.pdf)
 //   • Radiografías de tórax 15–16/04/2026
-// Coordinates derive from the new 200×520 silhouette. Conversion:
+// Coordinates derive from the anatomical silhouette. Conversion:
 //   x_pct = x_viewBox / 2      ·      y_pct = y_viewBox / 5.2
 // Anatomy convention: figure FACES the viewer. Patient's LEFT = viewer's RIGHT.
 // So "Izquierda" markers sit at x > 50%, "Derecha" markers at x < 50%.
+// Landmarks: shoulder y=122 (23%), ribs y=134-222 (26-43%), waist y=264 (51%),
+// hip y=320 (62%), crotch y=354 (68%), mid-thigh y=400 (77%).
 const BODY_REGIONS = [
   // CRITICAL — compromiso neoplásico documentado por PET o biopsia
-  { id: 'chest-l',  side: 'front', x: 61,   y: 29,   severity: 'critical', organ: 'lung-left',
+  { id: 'chest-l',  side: 'front', x: 62,   y: 33,   severity: 'critical', organ: 'lung-left',
     label: 'Pulmón/Pleura Izquierda',
     notes: 'Derrame pleural izquierdo persistente (RX 16/04). Nódulo LSI apicoposterior SUVmax 12.2, 16 mm (PET 07/04). Vigilar disnea y saturación.' },
-  { id: 'chest-r',  side: 'front', x: 39,   y: 29,   severity: 'critical', organ: 'lung-right',
+  { id: 'chest-r',  side: 'front', x: 38,   y: 33,   severity: 'critical', organ: 'lung-right',
     label: 'Pulmón Derecho',
     notes: 'Nódulo LSD anterior SUVmax 14.6 de 22 mm; LSD apical SUVmax 13.5 de 17 mm. Tubo de toracostomía en base pulmonar derecha. Enfisema subcutáneo pared derecha.' },
-  { id: 'spleen',   side: 'front', x: 60,   y: 40,   severity: 'critical', organ: 'spleen',
+  { id: 'spleen',   side: 'front', x: 63,   y: 43,   severity: 'critical', organ: 'spleen',
     label: 'Bazo',
     notes: 'Bazo 11.2 cm con aumento difuso del metabolismo. Lesión hipermetabólica polo superior SUVmax 25.6 de 42×46 mm — sospecha de infiltración neoplásica.' },
-  { id: 'pelvis',   side: 'front', x: 50,   y: 59,   severity: 'critical', organ: 'pelvis',
+  { id: 'pelvis',   side: 'front', x: 50,   y: 64,   severity: 'critical', organ: 'pelvis',
     label: 'Médula Ósea · Pelvis',
     notes: 'Mielograma (17/04): infiltración masiva por linfoma B difuso de células grandes — 70% de celularidad tumoral. Lesiones líticas en ilíacos SUVmax 7.7, sacro y fémures. Riesgo de fractura patológica.' },
   // ALERT — adenopatías activas, compromiso óseo localizado, riesgo inminente
-  { id: 'neck',     side: 'front', x: 50,   y: 16,   severity: 'alert',
+  { id: 'neck',     side: 'front', x: 50,   y: 19,   severity: 'alert',
     label: 'Ganglios Cervicales',
     notes: 'Adenopatías supraclaviculares bilaterales, predominio izquierdo. SUVmax 10.3, 11×18 mm. Foco en cartílago tiroides derecho SUVmax 4.2. Tiroides sin lesiones.' },
-  { id: 'mediastinum', side: 'front', x: 50, y: 32,  severity: 'alert',
+  { id: 'mediastinum', side: 'front', x: 50, y: 34,  severity: 'alert',
     label: 'Ganglios Mediastinales',
     notes: 'Adenopatías prevasculares, paratraqueales, subaórticas, subcarinales e hiliares bilaterales. Dominantes: subcarinal SUVmax 11.9 (21 mm); hiliar derecho SUVmax 11.1 (27 mm).' },
-  { id: 'ribs-r',   side: 'front', x: 34,   y: 36,   severity: 'alert',
+  { id: 'ribs-r',   side: 'front', x: 35,   y: 40,   severity: 'alert',
     label: 'Costillas Derechas',
     notes: 'Fractura del 11º arco costal posterior derecho. Lesión de tejidos blandos en 3er arco costal. 2ª unión costovertebral SUVmax 9.3. Manejo activo del dolor.' },
-  { id: 'abdomen-ln', side: 'front', x: 50, y: 51,   severity: 'alert',
+  { id: 'abdomen-ln', side: 'front', x: 50, y: 55,   severity: 'alert',
     label: 'Ganglios Abdominales',
     notes: 'Conglomerados en hilio hepático, retrocrural, periesplénico SUVmax 26.7 (23 mm), peripancreático SUVmax 20.7, mesentérico SUVmax 13.7 (28×39 mm).' },
-  { id: 'stomach',  side: 'front', x: 52,   y: 44,   severity: 'alert',
+  { id: 'stomach',  side: 'front', x: 54,   y: 47,   severity: 'alert',
     label: 'Duodeno / Estómago',
     notes: 'Biopsia duodenal (12/04): linfoma B difuso fenotipo activado (Hans). Gastritis crónica con atrofia severa antral (OLGA 4). H. pylori negativo.' },
   // MONITOR — sin compromiso documentado o profiláctico
-  { id: 'head',     side: 'front', x: 50,   y: 8,    severity: 'monitor',
+  { id: 'head',     side: 'front', x: 50,   y: 9,    severity: 'monitor',
     label: 'Cabeza',
     notes: 'Parénquima cerebral normal en PET. TAC cráneo (12/04): ateromatosis carotídea intracraneana. Vigilar orientación y delirio nocturno.' },
-  { id: 'mouth',    side: 'front', x: 50,   y: 11,   severity: 'monitor',
+  { id: 'mouth',    side: 'front', x: 50,   y: 14,   severity: 'monitor',
     label: 'Boca',
     notes: 'Profilaxis mucositis: enjuague con bicarbonato 4–6 veces/día. Revisar placas blancas (candidiasis).' },
-  { id: 'heart',    side: 'front', x: 54,   y: 30,   severity: 'monitor', organ: 'heart',
+  { id: 'heart',    side: 'front', x: 55,   y: 37,   severity: 'monitor', organ: 'heart',
     label: 'Corazón',
     notes: 'Riesgo de cardiotoxicidad por doxorrubicina (R-CHOP). Ecocardiograma basal obligatorio antes de cada ciclo.' },
-  { id: 'liver',    side: 'front', x: 40,   y: 40,   severity: 'monitor', organ: 'liver',
+  { id: 'liver',    side: 'front', x: 38,   y: 44,   severity: 'monitor', organ: 'liver',
     label: 'Hígado',
     notes: 'Hígado 16 cm sin lesiones hipermetabólicas en PET. Función hepática a verificar antes de cada ciclo.' },
   { id: 'legs',     side: 'front', x: 42,   y: 77,   severity: 'alert',
     label: 'Fémures',
     notes: 'Lesiones hipermetabólicas en tercio proximal de ambos fémures y tercio medio del fémur derecho (SUVmax 7.9). Riesgo de fractura patológica — movilizar con precaución.' },
   // BACK VIEW
-  { id: 'spine',    side: 'back',  x: 50,   y: 42,   severity: 'critical', organ: 'spine',
+  { id: 'spine',    side: 'back',  x: 50,   y: 44,   severity: 'critical', organ: 'spine',
     label: 'Columna',
     notes: 'Múltiples cuerpos vertebrales comprometidos. C1 derecho SUVmax 6.5, apófisis espinosa C2. Sacro con hipermetabolismo. Monitorear dolor radicular y déficit neurológico.' },
-  { id: 'kidneys',  side: 'back',  x: 50,   y: 50,   severity: 'monitor', organ: 'kidneys',
+  { id: 'kidneys',  side: 'back',  x: 50,   y: 53,   severity: 'monitor', organ: 'kidneys',
     label: 'Riñones',
     notes: 'Creatinina 0.94 mg/dL (18/04) — función renal preservada. Hidratación agresiva para prevenir síndrome de lisis tumoral.' },
-  { id: 'skin',     side: 'back',  x: 50,   y: 62,   severity: 'monitor',
+  { id: 'skin',     side: 'back',  x: 50,   y: 65,   severity: 'monitor',
     label: 'Piel',
     notes: 'Inmovilidad prolongada: revisar úlceras por presión cada turno. Cambio posicional cada 2 h. Plaquetas 118×10³/μL (15/04) — evitar trauma.' },
 ];
@@ -198,14 +200,14 @@ const SCENE_CSS = `
 .lc-markers { position: absolute; inset: 0; pointer-events: none; }
 .lc-marker {
   position: absolute;
-  width: 18px; height: 18px;
-  margin-left: -9px; margin-top: -9px;
+  width: 14px; height: 14px;
+  margin-left: -7px; margin-top: -7px;
   pointer-events: auto;
   cursor: pointer;
   transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.lc-marker:hover { transform: scale(1.3); }
-.lc-marker.lc-selected { transform: scale(1.55); }
+.lc-marker:hover { transform: scale(1.35); }
+.lc-marker.lc-selected { transform: scale(1.6); }
 
 .lc-marker-core {
   position: absolute; inset: 4px;
@@ -228,7 +230,7 @@ const SCENE_CSS = `
 @keyframes lc-pulse {
   0%   { transform: scale(0.7); opacity: 0.85; }
   70%  { opacity: 0; }
-  100% { transform: scale(3.0); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
 /* Marker label tooltip (hover / selected) */
@@ -380,91 +382,175 @@ const SCENE_CSS = `
    differ in the internal structural hints (ribs/clavicles vs spine/scapulae).
    ────────────────────────────────────────────────────────────────────────── */
 
-// 8-heads proportions on a 200×520 canvas
-// head: width 40, height 52 (cy 42, so crown y=16, chin y=68)
-// shoulder width: 2.2× head ≈ 88 (x=56 to x=144 at deltoid peak y=108)
-// waist: 1.3× head ≈ 52 (x=74 to x=126 at y=236)
-// hip: 1.65× head ≈ 66 (x=67 to x=133 at y=292)
-// crotch y=328 · knee y=446 · ankle y=498
-const SILHOUETTE = {
-  head: { cx: 100, cy: 42, rx: 20, ry: 26 },
-  neck:
-    'M 89 66 L 87 90 Q 100 94 113 90 L 111 66 Q 100 70 89 66 Z',
-  // Torso: trap→shoulder peak→armpit→ribcage→waist (narrowest)→hip flare→inner thigh
-  torso:
-    'M 87 90 ' +
-    'Q 74 94 64 106 ' +         // trapezius slope to shoulder
-    'Q 58 118 66 134 ' +        // deltoid cap down to armpit
-    'Q 70 160 70 184 ' +        // upper ribcage side
-    'Q 74 212 76 236 ' +        // ribcage narrowing to waist
-    'Q 70 266 68 292 ' +        // hip flare
-    'Q 72 316 82 328 ' +        // hip down to thigh top
-    'L 118 328 ' +              // crotch line
-    'Q 128 316 132 292 ' +      // right hip
-    'Q 130 266 124 236 ' +      // right waist
-    'Q 126 212 130 184 ' +      // right ribcage
-    'Q 130 160 134 134 ' +      // right armpit
-    'Q 142 118 136 106 ' +      // right deltoid peak
-    'Q 126 94 113 90 Z',        // back to trap base
-  // Left arm hangs from deltoid, tapering through forearm to a small hand.
-  // Arm length ≈ 245 units (47% of body height) — fingertips end mid-thigh.
-  armL:
-    'M 58 108 ' +
-    'Q 44 140 40 184 ' +        // outer upper arm (bicep bulge)
-    'Q 36 232 36 278 ' +        // elbow
-    'Q 34 318 40 346 ' +        // forearm to wrist
-    'Q 44 354 50 348 ' +        // hand (closed fist)
-    'L 54 318 ' +               // inner hand
-    'Q 54 278 52 232 ' +        // inner forearm
-    'Q 56 184 62 138 ' +        // inner upper arm (tricep)
-    'Q 64 120 68 110 Z',        // return to shoulder/armpit
-  armR:
-    'M 142 108 ' +
-    'Q 156 140 160 184 ' +
-    'Q 164 232 164 278 ' +
-    'Q 166 318 160 346 ' +
-    'Q 156 354 150 348 ' +
-    'L 146 318 ' +
-    'Q 146 278 148 232 ' +
-    'Q 144 184 138 138 ' +
-    'Q 136 120 132 110 Z',
-  // Legs — small gap at crotch, inner/outer asymmetry for natural stance
-  legL:
-    'M 70 332 ' +
-    'Q 64 392 72 446 ' +
-    'Q 70 476 78 500 ' +
-    'L 94 500 ' +
-    'Q 96 476 96 446 ' +
-    'Q 98 392 98 332 Z',
-  legR:
-    'M 130 332 ' +
-    'Q 136 392 128 446 ' +
-    'Q 130 476 122 500 ' +
-    'L 106 500 ' +
-    'Q 104 476 104 446 ' +
-    'Q 102 392 102 332 Z',
-};
+// Lean 7.5-heads proportions on a 200×520 canvas.
+// The body is rendered as:  FILL layer (all parts, same gradient, no stroke) +
+//                           OUTLINE layer (single stroke-only path tracing
+//                                          the outer silhouette) +
+//                           SKELETON + ORGANS layers on top.
+// This yields a clean translucent "hologram" that reveals internal anatomy,
+// like the reference.
+
+const HEAD = { cx: 100, cy: 44, rx: 22, ry: 30 };
+
+const NECK_FILL = 'M 88 72 L 86 102 Q 100 108 114 102 L 112 72 Q 100 78 88 72 Z';
+
+// Torso fill — shoulders + ribcage + waist + hips as ONE piece
+const TORSO_FILL =
+  'M 86 98 ' +
+  'Q 70 102 58 116 ' +          // trap slope to shoulder peak
+  'Q 48 126 52 152 ' +           // deltoid cap
+  'Q 60 156 70 156 ' +           // blend at armpit (rounded)
+  'Q 72 186 70 216 ' +           // ribcage taper
+  'Q 76 248 80 264 ' +           // to waist (narrowest)
+  'Q 68 292 62 320 ' +           // hip flare
+  'Q 66 344 80 354 ' +           // hip to inner thigh top
+  'L 120 354 ' +                 // crotch line
+  'Q 134 344 138 320 ' +         // right hip
+  'Q 132 292 120 264 ' +         // right waist
+  'Q 124 248 130 216 ' +         // right ribcage
+  'Q 128 186 130 156 ' +         // right armpit
+  'Q 140 156 148 152 ' +
+  'Q 152 126 142 116 ' +
+  'Q 130 102 114 98 ' +
+  'Z';
+
+// Arms — each fills into the torso silhouette at the shoulder, so the
+// overlap is generous enough that no seam is visible.
+const LEFT_ARM_FILL =
+  'M 56 122 ' +
+  'Q 40 152 36 198 ' +           // upper arm (bicep bulge at y≈200)
+  'Q 32 248 32 294 ' +           // elbow through forearm
+  'Q 32 336 38 358 ' +           // wrist
+  'Q 42 372 50 368 ' +           // hand/fingertips
+  'Q 56 358 54 338 ' +           // inner hand
+  'Q 54 294 56 248 ' +           // inner forearm
+  'Q 58 204 62 176 ' +           // inner upper arm
+  'Q 64 152 72 132 ' +           // inner shoulder curve (overlaps torso)
+  'Z';
+
+const RIGHT_ARM_FILL =
+  'M 144 122 ' +
+  'Q 160 152 164 198 ' +
+  'Q 168 248 168 294 ' +
+  'Q 168 336 162 358 ' +
+  'Q 158 372 150 368 ' +
+  'Q 144 358 146 338 ' +
+  'Q 146 294 144 248 ' +
+  'Q 142 204 138 176 ' +
+  'Q 136 152 128 132 ' +
+  'Z';
+
+// Legs — clear thigh→knee→calf→ankle taper
+const LEFT_LEG_FILL =
+  'M 68 354 ' +
+  'Q 60 402 66 442 ' +           // outer thigh bulge to knee
+  'Q 62 472 76 500 ' +           // calf bulge to ankle
+  'L 94 500 ' +
+  'Q 96 472 96 442 ' +           // inner calf
+  'Q 98 402 96 354 ' +           // inner thigh
+  'Z';
+
+const RIGHT_LEG_FILL =
+  'M 132 354 ' +
+  'Q 140 402 134 442 ' +
+  'Q 138 472 124 500 ' +
+  'L 106 500 ' +
+  'Q 104 472 104 442 ' +
+  'Q 102 402 104 354 ' +
+  'Z';
+
+// Outer silhouette outline — ONE continuous path tracing the body edge.
+// Fill="none", stroke only. This hides all internal part seams.
+const BODY_OUTLINE =
+  // Start at crown
+  'M 100 14 ' +
+  // Right side of head
+  'Q 122 14 122 44 ' +
+  'Q 122 66 114 72 ' +
+  'L 112 78 ' +
+  // Right neck
+  'Q 126 90 140 108 ' +
+  // Right shoulder/deltoid
+  'Q 152 122 148 146 ' +
+  // Right upper arm outer → forearm → wrist
+  'Q 164 176 164 216 ' +
+  'Q 168 264 168 306 ' +
+  'Q 168 340 162 360 ' +
+  // Right hand
+  'Q 158 372 150 368 ' +
+  'Q 144 358 146 340 ' +
+  // Inner arm back up to armpit (traces the inner arm curve)
+  'Q 144 302 142 260 ' +
+  'Q 142 220 138 188 ' +
+  'Q 134 162 130 148 ' +
+  // Right side of torso going DOWN from armpit
+  'Q 128 186 130 216 ' +
+  'Q 124 248 120 264 ' +
+  // Waist → hip
+  'Q 132 292 138 320 ' +
+  // Outer right thigh → knee → ankle
+  'Q 134 344 130 354 ' +
+  'Q 140 402 134 442 ' +
+  'Q 138 472 124 500 ' +
+  // Foot right (across)
+  'L 104 500 ' +
+  // Inner right leg back up to crotch
+  'Q 104 472 104 442 ' +
+  'Q 102 402 104 354 ' +
+  'L 96 354 ' +
+  // Inner left leg down
+  'Q 98 402 96 442 ' +
+  'Q 96 472 96 500 ' +
+  'L 76 500 ' +
+  // Outer left leg back up
+  'Q 62 472 66 442 ' +
+  'Q 60 402 70 354 ' +
+  // Left hip → waist → ribcage (up)
+  'Q 66 344 62 320 ' +
+  'Q 68 292 80 264 ' +
+  'Q 76 248 70 216 ' +
+  'Q 72 186 70 148 ' +
+  // Inner left arm DOWN to hand
+  'Q 66 162 62 188 ' +
+  'Q 58 220 58 260 ' +
+  'Q 56 302 54 340 ' +
+  'Q 56 358 50 368 ' +
+  // Left hand and outer arm up
+  'Q 42 372 38 360 ' +
+  'Q 32 340 32 306 ' +
+  'Q 32 264 36 216 ' +
+  'Q 36 176 52 146 ' +
+  // Left shoulder → trap → neck
+  'Q 48 122 60 108 ' +
+  'Q 74 90 88 78 ' +
+  'L 86 72 ' +
+  'Q 78 66 78 44 ' +
+  'Q 78 14 100 14 ' +
+  'Z';
 
 function Silhouette({ skinId, edgeId }) {
   const fill = `url(#${skinId})`;
   const edge = `url(#${edgeId})`;
   return (
     <g>
-      {/* Arms drawn first so they sit BEHIND the torso at the shoulder */}
-      <path d={SILHOUETTE.armL} fill={fill} stroke={edge} strokeWidth="1" strokeOpacity="0.65" />
-      <path d={SILHOUETTE.armR} fill={fill} stroke={edge} strokeWidth="1" strokeOpacity="0.65" />
-      {/* Legs */}
-      <path d={SILHOUETTE.legL} fill={fill} stroke={edge} strokeWidth="1" strokeOpacity="0.65" />
-      <path d={SILHOUETTE.legR} fill={fill} stroke={edge} strokeWidth="1" strokeOpacity="0.65" />
-      {/* Torso covers arm attachment points cleanly */}
-      <path d={SILHOUETTE.torso} fill={fill} stroke={edge} strokeWidth="1.2" strokeOpacity="0.82" />
-      {/* Neck & head on top */}
-      <path d={SILHOUETTE.neck} fill={fill} stroke={edge} strokeWidth="1" strokeOpacity="0.7" />
-      <ellipse
-        cx={SILHOUETTE.head.cx} cy={SILHOUETTE.head.cy}
-        rx={SILHOUETTE.head.rx} ry={SILHOUETTE.head.ry}
-        fill={fill} stroke={edge} strokeWidth="1.2" strokeOpacity="0.78"
-      />
+      {/* FILL LAYER — all body parts rendered with same gradient, no strokes */}
+      <g fill={fill} stroke="none">
+        <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} />
+        <path d={NECK_FILL} />
+        <path d={LEFT_ARM_FILL} />
+        <path d={RIGHT_ARM_FILL} />
+        <path d={TORSO_FILL} />
+        <path d={LEFT_LEG_FILL} />
+        <path d={RIGHT_LEG_FILL} />
+      </g>
+
+      {/* OUTLINE LAYER — single stroke-only path tracing the full body edge */}
+      <path d={BODY_OUTLINE} fill="none" stroke={edge} strokeWidth="1.2"
+            strokeOpacity="0.85" strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Head outline (ellipse handles its own smooth edge) */}
+      <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry}
+               fill="none" stroke={edge} strokeWidth="1.2" strokeOpacity="0.85" />
     </g>
   );
 }
@@ -474,9 +560,9 @@ function BodyFrontSVG() {
     <svg className="lc-body-svg lc-body-entry" viewBox="0 0 200 520" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="lc-skin" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%"   stopColor="rgba(125,211,252,0.35)" />
-          <stop offset="40%"  stopColor="rgba(56,189,248,0.22)" />
-          <stop offset="100%" stopColor="rgba(129,140,248,0.18)" />
+          <stop offset="0%"   stopColor="rgba(125,211,252,0.32)" />
+          <stop offset="40%"  stopColor="rgba(56,189,248,0.18)" />
+          <stop offset="100%" stopColor="rgba(129,140,248,0.14)" />
         </linearGradient>
         <linearGradient id="lc-edge" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%"   stopColor="#7dd3fc" />
@@ -490,27 +576,105 @@ function BodyFrontSVG() {
 
       <Silhouette skinId="lc-skin" edgeId="lc-edge" />
 
-      {/* Front-specific: clavicles, sternum, ribs, pelvic brim */}
-      <g stroke="rgba(255,255,255,0.16)" strokeWidth="0.8" fill="none">
-        {/* Clavicles — from sternal notch out to acromion */}
-        <path d="M 100 98 Q 82 104 64 108" />
-        <path d="M 100 98 Q 118 104 136 108" />
-        {/* Sternum */}
-        <line x1="100" y1="104" x2="100" y2="196" />
-        {/* Ribs — 5 arcs at decreasing curvature */}
-        <path d="M 72 128 Q 100 118 128 128" />
-        <path d="M 68 148 Q 100 138 132 148" />
-        <path d="M 68 170 Q 100 160 132 170" />
-        <path d="M 72 192 Q 100 184 128 192" />
-        <path d="M 76 212 Q 100 204 124 212" />
-        {/* Iliac crests / pelvic brim */}
-        <path d="M 70 290 Q 100 310 130 290" />
+      {/* ═══ INTERNAL ANATOMY (always visible through translucent skin) ═══ */}
+
+      {/* Skull midline + brow */}
+      <g fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="0.7" strokeLinecap="round">
+        <line x1="100" y1="22" x2="100" y2="68" strokeDasharray="2 3" />
+        <path d="M 84 42 Q 100 46 116 42" />
+        <path d="M 94 54 Q 100 58 106 54" />
+      </g>
+
+      {/* Cervical spine through neck */}
+      <line x1="100" y1="76" x2="100" y2="112" stroke="rgba(255,255,255,0.42)" strokeWidth="1" strokeDasharray="3 2" />
+
+      {/* Clavicles */}
+      <g stroke="rgba(255,255,255,0.55)" strokeWidth="1.4" fill="none" strokeLinecap="round">
+        <path d="M 100 112 Q 84 118 58 124" />
+        <path d="M 100 112 Q 116 118 142 124" />
+      </g>
+
+      {/* Ribcage — 8 pairs of ribs + sternum */}
+      <g fill="none" stroke="rgba(255,255,255,0.38)" strokeWidth="1" strokeLinecap="round">
+        {Array.from({ length: 8 }).map((_, i) => {
+          const y = 134 + i * 11;
+          // Ribs widen then narrow toward the waist (elliptical ribcage)
+          const bulge = i < 4 ? 30 + i * 1.8 : 36 - (i - 4) * 2;
+          const endY = y + 10;
+          return (
+            <g key={i}>
+              <path d={`M 100 ${y - 2} Q ${100 - bulge} ${y + 4} ${100 - bulge * 0.5} ${endY}`} />
+              <path d={`M 100 ${y - 2} Q ${100 + bulge} ${y + 4} ${100 + bulge * 0.5} ${endY}`} />
+            </g>
+          );
+        })}
+        <line x1="100" y1="122" x2="100" y2="228" stroke="rgba(255,255,255,0.55)" strokeWidth="1.4" />
+      </g>
+
+      {/* Lungs — bilateral, inside ribcage (low opacity for translucency) */}
+      <g fill="rgba(125,211,252,0.08)" stroke="rgba(125,211,252,0.35)" strokeWidth="0.7">
+        <path d="M 94 130 Q 80 140 72 172 Q 70 210 78 226 Q 92 228 96 218 Q 98 172 96 140 Z" />
+        <path d="M 106 130 Q 120 140 128 172 Q 130 210 122 226 Q 108 228 104 218 Q 102 172 104 140 Z" />
+      </g>
+
+      {/* Heart — slightly left of midline, upper chest */}
+      <g fill="rgba(244,114,182,0.14)" stroke="rgba(244,114,182,0.48)" strokeWidth="0.9">
+        <path d="M 100 166 Q 92 170 92 186 Q 96 206 110 212 Q 120 200 116 184 Q 110 166 100 166 Z" />
+      </g>
+
+      {/* Liver — right upper abdomen (patient's right = viewer's left) */}
+      <g fill="rgba(180,83,9,0.14)" stroke="rgba(180,83,9,0.46)" strokeWidth="0.8">
+        <path d="M 68 220 Q 64 240 74 252 Q 98 256 104 242 Q 102 226 92 218 Q 80 216 68 220 Z" />
+      </g>
+
+      {/* Stomach — left upper abdomen */}
+      <g fill="rgba(251,191,36,0.12)" stroke="rgba(251,191,36,0.42)" strokeWidth="0.8">
+        <path d="M 108 226 Q 106 244 116 250 Q 128 248 130 234 Q 128 224 118 222 Q 112 222 108 226 Z" />
+      </g>
+
+      {/* Spleen — behind stomach, patient's left, mid-back but silhouetted here */}
+      <g fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.38)" strokeWidth="0.7">
+        <ellipse cx="126" cy="222" rx="6" ry="10" />
+      </g>
+
+      {/* Small intestine coil (central lower abdomen) */}
+      <g fill="rgba(248,113,113,0.08)" stroke="rgba(248,113,113,0.30)" strokeWidth="0.6" strokeLinecap="round">
+        <path d="M 80 264 Q 90 272 100 268 Q 110 272 120 264" />
+        <path d="M 78 276 Q 90 284 100 280 Q 110 284 122 276" />
+        <path d="M 80 288 Q 92 294 100 290 Q 108 294 120 288" />
+      </g>
+
+      {/* Pelvis bowl + iliac crests + pubic symphysis */}
+      <g fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="1.2" strokeLinecap="round">
+        <path d="M 64 308 Q 70 330 86 340" />
+        <path d="M 136 308 Q 130 330 114 340" />
+        <path d="M 86 340 Q 100 348 114 340" />
+        <path d="M 94 332 L 94 352" />
+        <path d="M 106 332 L 106 352" />
+      </g>
+
+      {/* Femur hints (thigh bones) */}
+      <g stroke="rgba(255,255,255,0.28)" strokeWidth="1.1" fill="none" strokeLinecap="round">
+        <path d="M 84 356 L 84 422" strokeDasharray="4 3" />
+        <path d="M 116 356 L 116 422" strokeDasharray="4 3" />
+      </g>
+
+      {/* Patella (knee caps) */}
+      <g fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.52)" strokeWidth="0.9">
+        <ellipse cx="84" cy="436" rx="6" ry="5" />
+        <ellipse cx="116" cy="436" rx="6" ry="5" />
+      </g>
+
+      {/* Tibia/fibula (lower leg bones) */}
+      <g stroke="rgba(255,255,255,0.28)" strokeWidth="1.1" fill="none" strokeLinecap="round">
+        <path d="M 86 446 L 88 492" strokeDasharray="4 3" />
+        <path d="M 114 446 L 112 492" strokeDasharray="4 3" />
       </g>
 
       {/* Breathing halo over the heart/chest */}
-      <circle cx="100" cy="156" r="34" fill="url(#lc-chest-pulse)" opacity="0.55">
+      <circle cx="100" cy="184" r="34" fill="url(#lc-chest-pulse)" opacity="0.45">
         <animate attributeName="r" values="30;40;30" dur="4.2s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.3;0.6;0.3" dur="4.2s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.25;0.5;0.25" dur="4.2s" repeatCount="indefinite" />
       </circle>
     </svg>
   );
@@ -533,26 +697,75 @@ function BodyBackSVG() {
 
       <Silhouette skinId="lc-skin-b" edgeId="lc-edge-b" />
 
-      {/* Back-specific: spine, scapulae, kidneys */}
-      <g stroke="rgba(255,255,255,0.32)" strokeWidth="1.1" fill="none">
-        <path d="M 100 92 L 100 322" strokeDasharray="4 3" />
-        {Array.from({ length: 16 }).map((_, i) => {
-          const y = 100 + i * 14;
-          const w = 6 + (i > 8 ? (i - 8) * 0.4 : 0); // widen slightly toward lumbar
-          return <line key={i} x1={100 - w} y1={y} x2={100 + w} y2={y} strokeWidth="0.9" />;
+      {/* Back of skull seam */}
+      <g fill="none" stroke="rgba(255,255,255,0.26)" strokeWidth="0.7" strokeLinecap="round">
+        <line x1="100" y1="22" x2="100" y2="68" strokeDasharray="2 3" />
+        <path d="M 82 34 Q 100 38 118 34" />
+      </g>
+
+      {/* Full spine — cervical + thoracic + lumbar + sacrum */}
+      <g stroke="rgba(255,255,255,0.42)" strokeWidth="1.2" fill="none" strokeLinecap="round">
+        <path d="M 100 76 L 100 348" strokeDasharray="3 2" />
+      </g>
+      <g stroke="rgba(255,255,255,0.58)" fill="rgba(255,255,255,0.08)" strokeWidth="0.9">
+        {Array.from({ length: 22 }).map((_, i) => {
+          const y = 86 + i * 12;
+          const isLumbar = i > 14;
+          const w = isLumbar ? 8 + (i - 14) * 0.4 : 6;
+          return <ellipse key={i} cx="100" cy={y} rx={w} ry="3" />;
         })}
       </g>
 
       {/* Scapulae */}
-      <g stroke="rgba(255,255,255,0.18)" strokeWidth="0.9" fill="none">
-        <path d="M 72 120 Q 80 148 92 160" />
-        <path d="M 128 120 Q 120 148 108 160" />
+      <g stroke="rgba(255,255,255,0.35)" strokeWidth="1.1" fill="rgba(255,255,255,0.04)" strokeLinecap="round">
+        <path d="M 66 128 Q 60 160 82 186 Q 94 176 92 150 Q 86 132 74 126 Z" />
+        <path d="M 134 128 Q 140 160 118 186 Q 106 176 108 150 Q 114 132 126 126 Z" />
       </g>
 
-      {/* Kidneys — retroperitoneal, roughly T12-L3, right slightly lower */}
-      <g fill="rgba(251,191,36,0.10)" stroke="rgba(251,191,36,0.38)" strokeWidth="0.9">
-        <path d="M 80 232 Q 74 252 82 278 Q 92 286 94 268 Q 96 248 88 234 Z" />
-        <path d="M 120 238 Q 126 256 118 282 Q 108 290 106 272 Q 104 252 112 236 Z" />
+      {/* Back ribs (curving around from the sides) */}
+      <g fill="none" stroke="rgba(255,255,255,0.24)" strokeWidth="0.9" strokeLinecap="round">
+        {Array.from({ length: 6 }).map((_, i) => {
+          const y = 148 + i * 12;
+          const bulge = 28 + i * 1.5;
+          return (
+            <g key={i}>
+              <path d={`M 100 ${y - 2} Q ${100 - bulge} ${y + 3} ${100 - bulge * 0.4} ${y + 10}`} />
+              <path d={`M 100 ${y - 2} Q ${100 + bulge} ${y + 3} ${100 + bulge * 0.4} ${y + 10}`} />
+            </g>
+          );
+        })}
+      </g>
+
+      {/* Kidneys — retroperitoneal, T12-L3, right slightly lower than left */}
+      <g fill="rgba(251,191,36,0.14)" stroke="rgba(251,191,36,0.50)" strokeWidth="1">
+        <path d="M 78 240 Q 68 262 80 294 Q 94 302 98 280 Q 100 256 90 242 Z" />
+        <path d="M 122 248 Q 132 268 120 298 Q 106 306 102 284 Q 100 260 110 246 Z" />
+      </g>
+
+      {/* Pelvis (back view) — sacrum + ilium wings */}
+      <g fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="1.2" strokeLinecap="round">
+        <path d="M 64 310 Q 68 334 84 346" />
+        <path d="M 136 310 Q 132 334 116 346" />
+        <path d="M 94 340 L 94 360" />
+        <path d="M 106 340 L 106 360" />
+      </g>
+
+      {/* Femur hints (back of thigh) */}
+      <g stroke="rgba(255,255,255,0.26)" strokeWidth="1.1" fill="none" strokeLinecap="round">
+        <path d="M 84 360 L 84 422" strokeDasharray="4 3" />
+        <path d="M 116 360 L 116 422" strokeDasharray="4 3" />
+      </g>
+
+      {/* Popliteal (back of knee) */}
+      <g fill="none" stroke="rgba(255,255,255,0.34)" strokeWidth="0.9" strokeLinecap="round">
+        <path d="M 78 434 Q 84 438 90 434" />
+        <path d="M 110 434 Q 116 438 122 434" />
+      </g>
+
+      {/* Calf bones from behind */}
+      <g stroke="rgba(255,255,255,0.26)" strokeWidth="1.1" fill="none" strokeLinecap="round">
+        <path d="M 86 446 L 88 492" strokeDasharray="4 3" />
+        <path d="M 114 446 L 112 492" strokeDasharray="4 3" />
       </g>
     </svg>
   );
