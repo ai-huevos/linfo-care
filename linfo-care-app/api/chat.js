@@ -1,4 +1,9 @@
-import { streamText } from 'ai';
+import { streamText, createGateway } from 'ai';
+
+// Explicit gateway provider — uses AI_GATEWAY_API_KEY env var
+const gateway = createGateway({
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? '',
+});
 
 const SYSTEM_PROMPT = `You are "Doctora Lío", a medical document translator, clinical summarizer, and family-care navigator for a Spanish-speaking family caring for an older adult (Rodrigo "Roro" Cardona, 78 years old) with diffuse large B-cell lymphoma (DLBCL).
 
@@ -41,11 +46,8 @@ export default async function handler(req) {
   try {
     const { messages } = await req.json();
 
-    // String model notation routes through Vercel AI Gateway.
-    // Auth: AI_GATEWAY_API_KEY env var (or OIDC token on Vercel runtime).
-    // No direct OpenAI API key needed.
     const result = streamText({
-      model: 'openai/gpt-4o-mini',
+      model: gateway('openai/gpt-4o-mini'),
       system: SYSTEM_PROMPT,
       messages,
       maxTokens: 1500,

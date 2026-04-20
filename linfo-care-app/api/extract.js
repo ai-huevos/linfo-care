@@ -1,4 +1,9 @@
-import { generateText } from 'ai';
+import { generateText, createGateway } from 'ai';
+
+// Explicit gateway provider — uses AI_GATEWAY_API_KEY env var
+const gateway = createGateway({
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? '',
+});
 
 const EXTRACTION_PROMPT = `You are a medical document extraction AI. You analyze images of medical documents in Spanish (prescriptions, lab results, authorizations, clinical notes) and extract structured data.
 
@@ -58,10 +63,9 @@ export default async function handler(req) {
       });
     }
 
-    // String model notation routes through Vercel AI Gateway.
-    // GPT-4o for vision (better than mini for document extraction).
+    // GPT-4o for vision via Vercel AI Gateway
     const result = await generateText({
-      model: 'openai/gpt-4o',
+      model: gateway('openai/gpt-4o'),
       messages: [
         {
           role: 'user',
@@ -78,9 +82,7 @@ export default async function handler(req) {
       temperature: 0.1,
     });
 
-    // Parse the JSON from the response
     const text = result.text;
-    // Extract JSON from potential markdown code blocks
     const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/({[\s\S]*})/);
     const extracted = JSON.parse(jsonMatch ? jsonMatch[1] : text);
 
