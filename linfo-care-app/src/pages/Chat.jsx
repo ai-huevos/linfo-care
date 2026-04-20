@@ -34,7 +34,7 @@ function generateLocalResponse(input) {
     return `**Enjuague bucal recomendado para hoy:**\n\n**1. El fundamental — bicarbonato + sal** (4-6 veces al día)\n• 250 ml agua tibia hervida\n• ½ cucharadita bicarbonato\n• ½ cucharadita sal refinada\n• Enjuagar 30 seg, escupir\n\n**2. Manzanilla** (2-3 veces al día como complemento)\n• 1 bolsita en 250 ml agua hervida\n• Dejar enfriar completamente\n• Enjuagar 30 seg\n\n**Evitar:** Listerine con alcohol, cepillos duros, limón directo.\n\n**Importante:** Revisar lengua y mucosas buscando placas blancas, úlceras o sangrado. Si aparece alguno, avisar a enfermería.`;
   }
 
-  return `Gracias por tu pregunta. Estoy procesando la información.\n\n💡 **Tip:** Para activar las respuestas de IA en tiempo real, se necesita configurar la API key en Netlify.\n\nMientras tanto, puedo ayudarte con:\n• **Términos médicos** — explico qué significan los resultados\n• **Cuidados diarios** — enjuagues, nutrición, prevención\n• **Organización familiar** — turnos, inventario, resúmenes\n\n¿Podrías ser más específico sobre qué necesitas saber?`;
+  return `Gracias por tu pregunta. Estoy procesando la información.\n\n💡 **Tip:** Para activar las respuestas de IA en tiempo real, se necesita configurar la API key en Vercel.\n\nMientras tanto, puedo ayudarte con:\n• **Términos médicos** — explico qué significan los resultados\n• **Cuidados diarios** — enjuagues, nutrición, prevención\n• **Organización familiar** — turnos, inventario, resúmenes\n\n¿Podrías ser más específico sobre qué necesitas saber?`;
 }
 
 export default function Chat() {

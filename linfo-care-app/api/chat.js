@@ -1,8 +1,9 @@
-import { streamText, createGateway } from 'ai';
+import { streamText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 
-// Explicit gateway provider — uses AI_GATEWAY_API_KEY env var
-const gateway = createGateway({
-  apiKey: process.env.AI_GATEWAY_API_KEY ?? '',
+// Use the standard OpenAI provider with fallback to AI_GATEWAY_API_KEY if needed.
+const openai = createOpenAI({
+  apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY || '',
 });
 
 const SYSTEM_PROMPT = `You are "Doctora Lío", a medical document translator, clinical summarizer, and family-care navigator for a Spanish-speaking family caring for an older adult (Rodrigo "Roro" Cardona, 78 years old) with diffuse large B-cell lymphoma (DLBCL).
@@ -47,7 +48,7 @@ export default async function handler(req) {
     const { messages } = await req.json();
 
     const result = streamText({
-      model: gateway('openai/gpt-4o-mini'),
+      model: openai('gpt-4o-mini'),
       system: SYSTEM_PROMPT,
       messages,
       maxTokens: 1500,
