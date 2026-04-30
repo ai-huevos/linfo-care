@@ -98,6 +98,12 @@ export default function LabResults() {
 
   const labNames = Object.keys(grouped).sort();
 
+  const allDates = useMemo(() => {
+    const datesSet = new Set();
+    results.forEach(r => datesSet.add(r.result_date));
+    return Array.from(datesSet).sort();
+  }, [results]);
+
   const addResult = async () => {
     const pid = await getPatientId();
     const knownLab = results.find(r => r.lab_name === form.lab_name);
@@ -201,96 +207,67 @@ export default function LabResults() {
           </p>
         </Card>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {labNames.map(name => {
-            const points = grouped[name];
-            const latest = points[points.length - 1];
-            const prev = points.length > 1 ? points[points.length - 2] : null;
-            const isAbove = latest.normal_max != null && latest.value > latest.normal_max;
-            const isBelow = latest.normal_min != null && latest.value < latest.normal_min;
-            const isAbnormal = isAbove || isBelow;
-            const trend = prev ? latest.value - prev.value : 0;
-            const trendPct = prev ? ((trend / prev.value) * 100).toFixed(1) : null;
-
-            return (
-              <Card key={name} className={isAbnormal ? 'border-rose-200 bg-rose-50/30' : ''}>
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-stone-900 flex items-center gap-2">
-                      {isAbnormal ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-500" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      )}
-                      {name}
-                    </h3>
-                    <p className="text-[10px] text-stone-400 mt-0.5">
-                      Rango: {latest.normal_min}–{latest.normal_max} {latest.unit}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-xl font-bold ${isAbnormal ? 'text-rose-600' : 'text-emerald-700'}`}>
-                      {Number(latest.value).toLocaleString()}
-                    </p>
-                    <p className="text-[10px] text-stone-500">{latest.unit}</p>
-                  </div>
-                </div>
-
-                {/* Sparkline */}
-                <div className="my-2">
-                  <Sparkline
-                    points={points.map(p => ({ value: Number(p.value) }))}
-                    normalMin={Number(latest.normal_min)}
-                    normalMax={Number(latest.normal_max)}
-                    color={isAbnormal ? '#ef4444' : '#10b981'}
-                    width={280}
-                    height={48}
-                  />
-                </div>
-
-                {/* Trend and date */}
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-1.5">
-                    <TrendIcon trend={isAbove ? trend : -trend} />
-                    {trendPct && (
-                      <span className={`text-xs font-medium ${Math.abs(trend) < 0.01 ? 'text-stone-400' : trend > 0 ? (isAbove ? 'text-rose-600' : 'text-emerald-600') : (isBelow ? 'text-rose-600' : 'text-emerald-600')}`}>
-                        {trend > 0 ? '+' : ''}{trendPct}%
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-stone-400 flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(latest.result_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
-                  </span>
-                </div>
-
-                {/* Notes */}
-                {latest.notes && (
-                  <p className="text-[10px] text-stone-500 mt-2 italic">📝 {latest.notes}</p>
-                )}
-
-                {/* History */}
-                <details className="mt-2">
-                  <summary className="text-[10px] text-sky-600 cursor-pointer hover:text-sky-700">
-                    Ver historial ({points.length} resultados)
-                  </summary>
-                  <div className="mt-2 space-y-1">
-                    {[...points].reverse().map(p => (
-                      <div key={p.id} className="flex items-center justify-between text-[10px] text-stone-500 py-0.5">
-                        <span>{new Date(p.result_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
-                        <span className={`font-medium ${
-                          (p.normal_max && p.value > p.normal_max) || (p.normal_min && p.value < p.normal_min) ? 'text-rose-600' : 'text-emerald-700'
-                        }`}>
-                          {Number(p.value).toLocaleString()} {p.unit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </Card>
-            );
-          })}
-        </div>
+        <Card className="overflow-hidden p-0">
+          <div className="p-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-sky-600" />
+              <h3 className="font-semibold text-stone-900">Cuadro Consolidado de Laboratorios</h3>
+            </div>
+            <span className="text-xs font-medium bg-stone-200 text-stone-700 px-2 py-1 rounded">Abril 2026</span>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-stone-50 text-stone-600">
+                <tr>
+                  <th className="px-4 py-3 font-medium border-b border-r border-stone-200 min-w-[150px]">Parámetro</th>
+                  <th className="px-4 py-3 font-medium border-b border-r border-stone-200 min-w-[120px]">Rango Normal</th>
+                  {allDates.map(date => (
+                    <th key={date} className="px-4 py-3 font-medium border-b border-stone-200 whitespace-nowrap text-center">
+                      {new Date(date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-200">
+                {labNames.map((name) => {
+                  const series = grouped[name];
+                  const latest = series[series.length - 1];
+                  return (
+                    <tr key={name} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-4 py-3 border-r border-stone-200">
+                        <div className="font-medium text-stone-900">{name}</div>
+                        <div className="text-xs text-stone-500">{latest?.unit}</div>
+                      </td>
+                      <td className="px-4 py-3 border-r border-stone-200 text-xs text-stone-500 whitespace-nowrap">
+                        {latest?.normal_min != null ? latest.normal_min : '-'} – {latest?.normal_max != null ? latest.normal_max : '-'}
+                      </td>
+                      {allDates.map(date => {
+                        const entry = series.find(s => s.result_date === date);
+                        
+                        if (!entry) {
+                          return <td key={date} className="px-4 py-3 text-center text-stone-300">-</td>;
+                        }
+                        
+                        const isAbove = entry.normal_max != null && entry.value > entry.normal_max;
+                        const isBelow = entry.normal_min != null && entry.value < entry.normal_min;
+                        const isAbnormal = isAbove || isBelow;
+                        
+                        const colorClass = isAbnormal ? 'text-rose-600 font-bold bg-rose-50' : 'text-stone-700';
+                        
+                        return (
+                          <td key={date} className={`px-4 py-3 text-center border-l border-stone-100 ${colorClass}`}>
+                            {Number(entry.value).toLocaleString()}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );

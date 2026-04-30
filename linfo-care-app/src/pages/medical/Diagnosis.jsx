@@ -32,26 +32,36 @@ export default function Diagnosis() {
 
       {/* What does Stage IV mean */}
       <Card>
-        <h3 className="text-base font-semibold text-stone-900 mb-3">¿Qué significa Estadio IV?</h3>
-        <p className="text-sm text-stone-700 leading-relaxed mb-4">
-          El estadio (I a IV) describe <strong>dónde se encuentra</strong> la enfermedad, no qué tan grave es necesariamente. 
-          Estadio IV significa que el linfoma salió de los ganglios linfáticos y está en al menos un órgano sólido.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="border border-stone-200 rounded-lg p-3">
-            <p className="text-xs font-medium text-stone-500 uppercase mb-1">Estadio I-II</p>
-            <p className="text-sm text-stone-700">Localizado en una zona o un lado del cuerpo</p>
+        <div className="flex items-start gap-3">
+          <div className="p-3 bg-sky-100 text-sky-700 rounded-xl font-bold text-xl leading-none">
+            IV
           </div>
-          <div className="border border-stone-200 rounded-lg p-3">
-            <p className="text-xs font-medium text-stone-500 uppercase mb-1">Estadio III</p>
-            <p className="text-sm text-stone-700">Ganglios de ambos lados del diafragma</p>
-          </div>
-          <div className="border border-sky-200 bg-sky-50 rounded-lg p-3 sm:col-span-2">
-            <p className="text-xs font-medium text-sky-700 uppercase mb-1">Estadio IV ← Roro</p>
-            <p className="text-sm text-sky-900">
-              Involucra órganos: duodeno, posiblemente médula ósea, lesiones líticas en huesos.
-              <strong> Pero importante: DLBCL Estadio IV es potencialmente curable con quimioterapia.</strong>
+          <div>
+            <h3 className="text-base font-semibold text-stone-900 mb-1">¿Por qué es Estadio IV?</h3>
+            <p className="text-sm text-stone-600 leading-relaxed">
+              El estadio no mide gravedad absoluta, mide <strong>ubicación</strong>. Roro es Fase IV porque el linfoma salió de los ganglios y llegó a órganos sólidos:
             </p>
+            
+            <ul className="mt-3 space-y-2">
+              <li className="flex items-center text-sm">
+                <CheckCircle2 className="w-4 h-4 text-sky-600 mr-2 flex-none" />
+                <span className="text-stone-800">Masa en <strong>duodeno</strong> (sistema digestivo)</span>
+              </li>
+              <li className="flex items-center text-sm">
+                <CheckCircle2 className="w-4 h-4 text-sky-600 mr-2 flex-none" />
+                <span className="text-stone-800">Lesiones líticas en <strong>huesos</strong> (pelvis, costilla)</span>
+              </li>
+              <li className="flex items-center text-sm">
+                <CheckCircle2 className="w-4 h-4 text-sky-600 mr-2 flex-none" />
+                <span className="text-stone-800">Posible invasión en <strong>médula ósea</strong> (causa de plaquetas bajas)</span>
+              </li>
+            </ul>
+
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900 font-medium">
+                💡 Dato Crítico: Pese a ser Estadio IV, este tipo de linfoma (DLBCL) reacciona fuertemente a la quimioterapia y tiene potencial curativo.
+              </p>
+            </div>
           </div>
         </div>
       </Card>
